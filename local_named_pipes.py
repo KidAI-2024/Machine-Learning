@@ -17,7 +17,7 @@ def process_frame(frame_bytes):
 
 
 def pipe_server():
-    pipe_name = r"\\.\pipe\my_named_pipe"  # Same pipe name as in Unity
+    pipe_name = "\\\\.\\pipe\\unity"  # Same pipe name as in Unity
     pipe = win32pipe.CreateNamedPipe(
         pipe_name,
         win32pipe.PIPE_ACCESS_DUPLEX,
