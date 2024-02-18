@@ -2,46 +2,86 @@ import time
 import cv2
 import numpy as np
 import socket
+import logging
+import argparse
+import os
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(("localhost", 5065))
-print("Listening on port 5065")
-data = b""
-chunkSize = 60000
-frame_count = 0
-previous_time = time.time()
-while True:
-    chunk, addr = sock.recvfrom(chunkSize)
-    data += chunk
+# Constants
+CHUNK_SIZE = 60000
+IMAGE_SHAPE = (180, 320, 3)
 
-    if len(chunk) < chunkSize:
-        frame_count += 1
-        if time.time() - previous_time > 1:
-            print(f"FPS: {frame_count}")
-            previous_time = time.time()
-            frame_count = 0
-        # print("Received image with size: ", len(data))
-        color_array = np.frombuffer(data, dtype=np.uint8)
-        img = color_array.reshape((180, 320, 3))
-        # Convert the image from BGR to RGB
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # Flip the image vertically
-        img = cv2.flip(img, 0)
-        # TODO: Process the image
+# Logging configuration
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
-        # --- Send the processed image back to Unity ---
-        # # Encode the grayscale image as JPEG
-        # _, jpeg = cv2.imencode('.jpg', gray)
-        # sock.sendto(jpeg.tobytes(), addr)
-        # --- Show the image ---
-        # cv2.imshow("UDP Image", img)
-        # while True:
-        #     if cv2.waitKey(1) & 0xFF == ord("q"):
-        #         break
-        # cv2.destroyAllWindows()
-        # --- Save the image ---
-        # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", img)
-        # Send a message back to the client
-        sock.sendto(b"Image received", addr)
-        # --- Reset the data ---
-        data = b""
+# Argument parsing
+parser = argparse.ArgumentParser(
+    description="A UDP Socket Server that receives and processes images from Unity Client"
+)
+parser.add_argument("--port", type=int, default=5065, help="The port to listen on")
+args = parser.parse_args()
+
+
+def receive_image(sock):
+    """Receives an image from a UDP socket and returns it as a numpy array"""
+    # Initialize the image data
+    image_data = b""
+    # Receive the chunks until the last one
+    while True:
+        chunk, addr = sock.recvfrom(CHUNK_SIZE)
+        image_data += chunk
+        if len(chunk) < CHUNK_SIZE:
+            break
+    # Convert the image data to a numpy array
+    color_array = np.frombuffer(image_data, dtype=np.uint8)
+    image = color_array.reshape(IMAGE_SHAPE)
+    # Return the image and the address
+    return image, addr
+
+
+def process_image(image):
+    """Processes the image and returns the result"""
+    # Convert the image from BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # Flip the image vertically
+    image = cv2.flip(image, 0)
+    # TODO: Add more processing steps
+    # Return the processed image
+    return image
+
+
+def main():
+    # Create a UDP socket
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        # Bind the socket to the port
+        sock.bind(("localhost", args.port))
+        logging.info(f"Listening on port {args.port}")
+        # Initialize the FPS counter
+        frame_count = 0
+        previous_time = time.time()
+        while True:
+            # Receive an image from the socket
+            image, addr = receive_image(sock)
+            # Process the image
+            processed_image = process_image(image)
+            # Count the FPS
+            frame_count += 1
+            if time.time() - previous_time > 1:
+                logging.info(f"FPS: {frame_count}")
+                previous_time = time.time()
+                frame_count = 0
+
+            # Send the processed image back to the client
+            # -- Not tested yet --
+            # _, jpeg = cv2.imencode('.jpg', processed_image)
+            # sock.sendto(jpeg.tobytes(), addr)
+
+            # Save the image
+            # cv2.imwrite(
+            #     os.path.join("frames_test", f"frame_{time.time()}.png"), processed_image
+            # )
+            # Send a message back to the client
+            sock.sendto(b"Image received", addr)
+
+
+if __name__ == "__main__":
+    main()
