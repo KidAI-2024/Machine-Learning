@@ -91,10 +91,18 @@ def main():
             message_obj, addr = receive_message(sock)
 
             # Get the frame bytes
-            frame_bytes = message_obj["frame"]
-            width = int(message_obj["width"])
-            height = int(message_obj["height"])
             event = message_obj["event"]
+            frame_bytes = message_obj["frame"]
+            width_str = message_obj["width"]
+            height_str = message_obj["height"]
+            try:
+                width = int(width_str)
+            except ValueError:
+                width = 320
+            try:
+                height = int(height_str)
+            except ValueError:
+                height = 180
 
             # Convert the bytes to an image
             image = bytes_to_image(frame_bytes, (height, width, 3))
