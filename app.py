@@ -99,10 +99,12 @@ def main():
                 width = int(width_str)
             except ValueError:
                 width = 320
+                logging.error(f"Invalid width: {width_str}")
             try:
                 height = int(height_str)
             except ValueError:
                 height = 180
+                logging.error(f"Invalid height: {height_str}")
 
             # Convert the bytes to an image
             image = bytes_to_image(frame_bytes, (height, width, 3))
