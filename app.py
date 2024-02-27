@@ -7,6 +7,7 @@ import socket
 import logging
 import argparse
 import os
+import json
 
 from HandPoseClassifier.hand_pose_classifier import HandPoseClassifier
 from ImageClassifier.image_classifier import ImageClassifier
@@ -23,7 +24,7 @@ audio_classifier = AudioClassifier()
 
 # Constants
 CHUNK_SIZE = 60000
-IMAGE_SHAPE = (180, 320, 3)
+# IMAGE_SHAPE = (180, 320, 3)
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -36,31 +37,43 @@ parser.add_argument("--port", type=int, default=5065, help="The port to listen o
 args = parser.parse_args()
 
 
-def receive_image(sock):
-    """Receives an image from a UDP socket and returns it as a numpy array"""
+# ---- Event handlers ----
+def predict_frame(image):
+    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
+    pass
+
+
+# Map event names to handlers
+EVENTS = {"predict_frame": predict_frame}
+
+
+#  ---- Socket functions ----
+def receive_message(sock):
+    """Receives a message from a UDP socket and returns it as a dictionary and the address of the sender."""
     # Initialize the image data
-    image_data = b""
+    message_bytes = b""
     # Receive the chunks until the last one
     while True:
         chunk, addr = sock.recvfrom(CHUNK_SIZE)
-        image_data += chunk
+        message_bytes += chunk
         if len(chunk) < CHUNK_SIZE:
             break
-    # Convert the image data to a numpy array
-    color_array = np.frombuffer(image_data, dtype=np.uint8)
-    image = color_array.reshape(IMAGE_SHAPE)
+    # Convert bytes to json
+    message_string = message_bytes.decode("utf-8")
+    message_obj = json.loads(message_string)
     # Return the image and the address
-    return image, addr
+    return message_obj, addr
 
 
-def process_image(image):
-    """Processes the image and returns the result"""
+def bytes_to_image(frame_bytes, shape):
+    # Get the image data
+    image_data = base64.b64decode(frame_bytes)
+    color_array = np.frombuffer(image_data, dtype=np.uint8)
+    image = color_array.reshape(shape)
     # Convert the image from BGR to RGB
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # Flip the image vertically
     image = cv2.flip(image, 0)
-    # TODO: Add more processing steps
-    # Return the processed image
     return image
 
 
@@ -75,9 +88,23 @@ def main():
         previous_time = time.time()
         while True:
             # Receive an image from the socket
-            image, addr = receive_image(sock)
-            # Process the image
-            processed_image = process_image(image)
+            message_obj, addr = receive_message(sock)
+
+            # Get the frame bytes
+            frame_bytes = message_obj["frame"]
+            width = int(message_obj["width"])
+            height = int(message_obj["height"])
+            event = message_obj["event"]
+
+            # Convert the bytes to an image
+            image = bytes_to_image(frame_bytes, (height, width, 3))
+
+            # Call the event handler
+            if event in EVENTS:
+                EVENTS[event](image)
+            else:
+                logging.error(f"Event '{event}' not found")
+
             # Count the FPS
             frame_count += 1
             if time.time() - previous_time > 1:
