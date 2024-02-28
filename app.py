@@ -41,10 +41,16 @@ args = parser.parse_args()
 def predict_frame(image):
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
     pass
+def start_body_pose_train(path):
+    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
+    pass
 
 
 # Map event names to handlers
-EVENTS = {"predict_frame": predict_frame}
+EVENTS = {
+            "predict_frame": predict_frame,
+            "start_body_pose_train": start_body_pose_train,
+        }
 
 
 #  ---- Socket functions ----
@@ -92,26 +98,30 @@ def main():
 
             # Get the frame bytes
             event = message_obj["event"]
-            frame_bytes = message_obj["frame"]
-            width_str = message_obj["width"]
-            height_str = message_obj["height"]
-            try:
-                width = int(width_str)
-            except ValueError:
-                width = 320
-                logging.error(f"Invalid width: {width_str}")
-            try:
-                height = int(height_str)
-            except ValueError:
-                height = 180
-                logging.error(f"Invalid height: {height_str}")
 
-            # Convert the bytes to an image
-            image = bytes_to_image(frame_bytes, (height, width, 3))
 
             # Call the event handler
             if event in EVENTS:
-                EVENTS[event](image)
+                if event == "start_body_pose_train":
+                    data_path = message_obj["path"] 
+                    EVENTS[event](data_path)
+                elif event == "predict_frame":
+                    frame_bytes = message_obj["frame"]
+                    width_str = message_obj["width"]
+                    height_str = message_obj["height"]
+                    try:
+                        width = int(width_str)
+                    except ValueError:
+                        width = 320
+                        logging.error(f"Invalid width: {width_str}")
+                    try:
+                        height = int(height_str)
+                    except ValueError:
+                        height = 180
+                        logging.error(f"Invalid height: {height_str}")
+                    # Convert the bytes to an image
+                    image = bytes_to_image(frame_bytes, (height, width, 3))
+                    EVENTS[event](image)
             else:
                 logging.error(f"Event '{event}' not found")
 
