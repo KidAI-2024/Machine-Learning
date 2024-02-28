@@ -42,8 +42,18 @@ def predict_frame(image):
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
     pass
 def start_body_pose_train(path):
-    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
-    pass
+    project_path = os.path.join("../","Engine", path)
+    # Loop over folders in the specified path
+    for folder in os.listdir(project_path):
+        folder_path = os.path.join(project_path, folder)
+        if os.path.isdir(folder_path):
+            for file_name in os.listdir(folder_path):
+                if file_name.endswith('.png'):
+                    image_path = os.path.join(folder_path, file_name)
+                    image = cv2.imread(image_path)
+                    # Perform training using the image
+                    # Your training code goes here
+    return 0
 
 
 # Map event names to handlers
