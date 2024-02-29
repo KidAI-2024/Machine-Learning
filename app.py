@@ -14,6 +14,7 @@ from ImageClassifier.image_classifier import ImageClassifier
 from BodyPoseClassifier.body_pose_classifier import BodyPoseClassifier
 from AudioClassifier.audio_classifier import AudioClassifier
 
+import utils
 
 # Model instance
 hand_pose_classifier = HandPoseClassifier()
@@ -42,17 +43,10 @@ def predict_frame(image):
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
     pass
 def start_body_pose_train(path):
-    project_path = os.path.join("../","Engine", path)
-    # Loop over folders in the specified path
-    for folder in os.listdir(project_path):
-        folder_path = os.path.join(project_path, folder)
-        if os.path.isdir(folder_path):
-            for file_name in os.listdir(folder_path):
-                if file_name.endswith('.png'):
-                    image_path = os.path.join(folder_path, file_name)
-                    image = cv2.imread(image_path)
-                    # Perform training using the image
-                    # Your training code goes here
+    # training_data is map {"Class Number(first character in the folder name)" : [images]}
+    training_data = utils.read_data(path)
+    for key in training_data:
+        print(f"Training for class {key} length: {len(training_data[key])}")
     return 0
 
 
@@ -156,4 +150,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    start_body_pose_train("Projects/Project1")
