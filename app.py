@@ -107,7 +107,7 @@ def main():
             # Call the event handler
             if event in EVENTS:
                 if event == "start_body_pose_train":
-                    data_path = message_obj["path"] 
+                    data_path = message_obj["path"]
                     EVENTS[event](data_path)
                 elif event == "predict_frame":
                     frame_bytes = message_obj["frame"]
