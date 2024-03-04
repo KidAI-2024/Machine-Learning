@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 parser = argparse.ArgumentParser(
     description="A UDP Socket Server that receives and processes images from Unity Client"
 )
-parser.add_argument("--port", type=int, default=5065, help="The port to listen on")
+parser.add_argument("--port", type=int, default = 5065, help="The port to listen on")
 args = parser.parse_args()
 
 
@@ -45,8 +45,9 @@ def predict_frame(image):
 def start_body_pose_train(path):
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     training_data = utils.read_data(path)
-    for key in training_data:
-        print(f"Training for class {key} length: {len(training_data[key])}")
+    preprocessed_data = body_pose_classifier.preprocess(training_data)
+    features_map = body_pose_classifier.extract_features(preprocessed_data)
+    print(features_map["0"][0])
     return 0
 
 
@@ -150,5 +151,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    # start_body_pose_train("Projects/Project1")
+    # main()
+    start_body_pose_train("Projects/Project1")
