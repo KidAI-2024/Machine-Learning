@@ -7,7 +7,7 @@ import numpy as np
 # returns map {"Class Number(first character in the folder name)" : [images]}
 def read_data(path):
     try:
-        project_path = os.path.join("../", "Engine", path)
+        project_path = os.path.join("..", "Engine", path)
         # Create empty map {"Class Number(first character in the folder name)" : [images]}
         training_data = {}
         # Loop over folders in the specified path
