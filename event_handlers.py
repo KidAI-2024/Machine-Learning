@@ -1,5 +1,7 @@
 import logging
 import utils
+import cv2
+import time
 
 
 class EventHandlers:
@@ -18,6 +20,7 @@ class EventHandlers:
         self.EVENTS = {
             "predict_frame": self.predict_frame,
             "start_body_pose_train": self.start_body_pose_train,
+            "predict_hand_pose": self.predict_hand_pose,
         }
 
     def handle_event(self, event, message_obj):
@@ -59,3 +62,9 @@ class EventHandlers:
         for key in training_data:
             print(f"Training for class {key} length: {len(training_data[key])}")
         return 0
+
+    # --- Hand Pose Classifier ---
+    def predict_hand_pose(self, image):
+        preprocessed_img = self.hand_pose_classifier.preprocess(image)
+        cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
+        pass
