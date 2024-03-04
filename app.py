@@ -1,7 +1,9 @@
 import logging
 import argparse
+
 from socket_server import SocketServer
 from event_handlers import EventHandlers
+
 from HandPoseClassifier.hand_pose_classifier import HandPoseClassifier
 from ImageClassifier.image_classifier import ImageClassifier
 from BodyPoseClassifier.body_pose_classifier import BodyPoseClassifier
