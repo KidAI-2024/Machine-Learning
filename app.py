@@ -150,5 +150,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    start_body_pose_train("Projects/Project1")
+    main()
+    # start_body_pose_train("Projects/Project1")
