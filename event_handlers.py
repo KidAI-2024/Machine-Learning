@@ -19,12 +19,13 @@ class EventHandlers:
             "predict_frame": self.predict_frame,
             "start_body_pose_train": self.start_body_pose_train,
         }
-
+    
     def handle_event(self, event, message_obj):
+        res = ""
         if event in self.EVENTS:
             if event == "start_body_pose_train":
                 data_path = message_obj["path"]
-                self.EVENTS[event](data_path)
+                res = self.EVENTS[event](data_path)
             elif event == "predict_frame":
                 frame_bytes = message_obj["frame"]
                 width_str = message_obj["width"]
@@ -41,21 +42,32 @@ class EventHandlers:
                     logging.error(f"Invalid height: {height_str}")
                 # Convert the bytes to an image
                 image = utils.bytes_to_image(frame_bytes, (height, width, 3))
-                self.EVENTS[event](image)
+                res = self.EVENTS[event](image)
         else:
+            res = f"Event '{event}' not found"
             logging.error(f"Event '{event}' not found")
+
+        return res
 
     # ------- Event handlers -------
 
     # --- General ---
-    def predict_frame(self, image):
-        # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
-        pass
-
-    # --- Body Pose Classifier ---
+    def predict_frame(self,image):
+        prediction = self.body_pose_classifier.predict(image)
+        return prediction
+        
     def start_body_pose_train(self, path):
         # training_data is map {"Class Number(first character in the folder name)" : [images]}
+        print("Reading data...")
         training_data = utils.read_data(path)
-        for key in training_data:
-            print(f"Training for class {key} length: {len(training_data[key])}")
-        return 0
+        print("Getting keypoints...")
+        preprocessed_data, landmarks_map = self.body_pose_classifier.preprocess(training_data)
+        print("Extracting features...")
+        features_map = self.body_pose_classifier.get_training_features(landmarks_map)
+        print("Training...")
+        self.body_pose_classifier.train(features_map)
+        # print("Saving model...")
+        # self.body_pose_classifier.save_model(path)
+        print("Training completed")
+        return "Training completed"
+    

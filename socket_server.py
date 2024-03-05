@@ -45,7 +45,7 @@ class SocketServer:
             event = message_obj["event"]
 
             # Call the event handler
-            self.event_handlers.handle_event(event, message_obj)
+            res = self.event_handlers.handle_event(event, message_obj)
 
             # Count the FPS
             frame_count += 1
@@ -64,4 +64,10 @@ class SocketServer:
             #     os.path.join("frames_test", f"frame_{time.time()}.png"), processed_image
             # )
             # Send a message back to the client
-            self.socket.sendto(b"Image received", addr)
+            binary = f'{res}'.encode('utf-8')
+            self.socket.sendto(binary, addr)
+
+    def testbodypose(self):
+        self.event_handlers.start_body_pose_train("Projects/body")
+        image = cv2.imread("../Engine/Projects/test/0_t-pose/0_t-pose_4.png")
+        res = self.event_handlers.predict_frame(image)

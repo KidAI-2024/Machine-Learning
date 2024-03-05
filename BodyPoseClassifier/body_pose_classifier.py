@@ -1,5 +1,6 @@
 from . import media_pipe
 import numpy as np
+import pickle
 from sklearn.neighbors import KNeighborsClassifier
 
 RELATIVE_POSTIONS = "relative_positions"
@@ -54,8 +55,7 @@ class BodyPoseClassifier:
         # Train the model
         self.model = KNeighborsClassifier()
         self.model.fit(X_train, y_train)
-        
-        
+
     def predict(self, image):
         preprocessed_image, landmark = media_pipe.get_landmarks(image)
         features = self.extract_features([landmark], feature_type = self.feature_type)
@@ -64,3 +64,13 @@ class BodyPoseClassifier:
         prediction = self.model.predict(features)
         print(f"Predicted class: {prediction[0]}")
         return prediction[0]
+    
+    # save and load model still not working
+    def save_model(self, path):
+        with open(path, 'wb') as f:
+            pickle.dump(self.model, f)
+
+    def load_model(self, path):
+        with open(path, 'rb') as f:
+            self.model = pickle.load(f)
+        

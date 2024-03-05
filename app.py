@@ -32,3 +32,4 @@ if __name__ == "__main__":
     )
     socket_server = SocketServer("localhost", args.port, event_handlers)
     socket_server.start()
+    # socket_server.testbodypose()

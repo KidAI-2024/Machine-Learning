@@ -91,10 +91,6 @@ def relative_positions_features(landmarks):
     # Convert landmarks to NumPy array for easier computation
     landmarks = np.array(landmarks)
     
-    # Calculate center of mass
-    center_x = np.mean(landmarks[:, 0])
-    center_y = np.mean(landmarks[:, 1])
-    
     # Calculate distances between specific landmarks
     # left
     l_dist_shoulder_to_elbow = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value])
