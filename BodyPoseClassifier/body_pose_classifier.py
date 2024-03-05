@@ -2,6 +2,7 @@ from . import media_pipe
 import numpy as np
 import pickle
 from sklearn.neighbors import KNeighborsClassifier
+import cv2
 
 RELATIVE_POSTIONS = "relative_positions"
 RELATIVE_ANGLES = "relative_angles"
@@ -57,6 +58,10 @@ class BodyPoseClassifier:
         self.model.fit(X_train, y_train)
 
     def predict(self, image):
+        # ignore the image it was all black
+        if np.all(image == 0):
+            return "99"
+        
         preprocessed_image, landmark = media_pipe.get_landmarks(image)
         features = self.extract_features([landmark], feature_type = self.feature_type)
         features = features[0]

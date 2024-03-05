@@ -1,6 +1,7 @@
 import logging
 import utils
-
+import time
+import cv2
 
 class EventHandlers:
     def __init__(
@@ -52,7 +53,8 @@ class EventHandlers:
     # ------- Event handlers -------
 
     # --- General ---
-    def predict_frame(self,image):
+    def predict_frame(self, image):
+        # cv2.imwrite(f"frame_{time.time()}.png", image)
         prediction = self.body_pose_classifier.predict(image)
         return prediction
         

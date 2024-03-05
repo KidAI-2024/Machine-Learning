@@ -31,5 +31,5 @@ if __name__ == "__main__":
         hand_pose_classifier, image_classifier, body_pose_classifier, audio_classifier
     )
     socket_server = SocketServer("localhost", args.port, event_handlers)
+    # socket_server.trainBodyPose()
     socket_server.start()
-    # socket_server.testbodypose()

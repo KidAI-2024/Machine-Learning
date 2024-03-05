@@ -12,7 +12,7 @@ mp_drawing = mp.solutions.drawing_utils
 def detectPose(image, display=True):
     # Create a copy of the input image.
     output_image = image.copy()
-    
+
     # Convert the image from BGR into RGB format.
     imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
