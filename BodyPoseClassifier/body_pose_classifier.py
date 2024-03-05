@@ -60,14 +60,14 @@ class BodyPoseClassifier:
     def predict(self, image):
         # ignore the image it was all black
         if np.all(image == 0):
-            return "99"
+            return -1
         
         preprocessed_image, landmark = media_pipe.get_landmarks(image)
         features = self.extract_features([landmark], feature_type = self.feature_type)
         features = features[0]
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)
-        print(f"Predicted class: {prediction[0]}")
+        # print(f"Predicted class: {prediction[0]}")
         return prediction[0]
     
     # save and load model still not working
