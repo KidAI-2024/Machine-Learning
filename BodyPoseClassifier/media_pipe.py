@@ -54,7 +54,7 @@ def detectPose(image, display=True):
     
 def get_landmarks(image, display = False):
     # Flip the image horizontally for natural (selfie-view) visualization.
-    image = cv2.flip(image, 1)
+    # image = cv2.flip(image, 1)
 
     # Check if the image is successfully read
     if image is None:
@@ -79,7 +79,7 @@ def get_landmarks_from_images(images, display = False):
     # Iterate over the images.
     for image in images:
         # Perform Pose landmark detection.
-        image, landmarks = detectPose(image, display)
+        image, landmarks = get_landmarks(image, display)
         # Append the landmarks into the list.
         landmarks_list.append(landmarks)
         images_list.append(image)
@@ -96,28 +96,45 @@ def relative_positions_features(landmarks):
     center_y = np.mean(landmarks[:, 1])
     
     # Calculate distances between specific landmarks
-    dist_shoulder_to_elbow = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value])
-    dist_elbow_to_wrist = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value] - landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value])
-    dist_shoulder_to_wrist = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value])
-    
+    # left
+    l_dist_shoulder_to_elbow = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value])
+    l_dist_elbow_to_wrist = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value] - landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value])
+    l_dist_shoulder_to_wrist = np.linalg.norm(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value])
+    # right
+    r_dist_shoulder_to_elbow = np.linalg.norm(landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value])
+    r_dist_elbow_to_wrist = np.linalg.norm(landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value] - landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value])
+    r_dist_shoulder_to_wrist = np.linalg.norm(landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value] - landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value])
+
     # Calculate angles between specific landmarks
-    angle_shoulder_elbow_wrist = angle_between_three_points(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value], landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value], landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value])
+    # left 
+    l_angle_shoulder_elbow_wrist = angle_between_three_points(landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value], landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value], landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value])
+    l_angle_eblow_shoulder_hip = angle_between_three_points(landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value], landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value], landmarks[mp_pose.PoseLandmark.LEFT_HIP.value])
+    # right
+    r_angle_shoulder_elbow_wrist = angle_between_three_points(landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value], landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value], landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value])
+    r_angle_eblow_shoulder_hip = angle_between_three_points(landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value], landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value], landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value])
     
     # Calculate symmetry
     symmetry_score = calculate_symmetry_score(landmarks)
-    # Construct a dictionary with feature names and their values
-    features = {
-        "Center of mass X": center_x,
-        "Center of mass Y": center_y,
-        "Distance shoulder to elbow": dist_shoulder_to_elbow,
-        "Distance elbow to wrist": dist_elbow_to_wrist,
-        "Distance shoulder to wrist": dist_shoulder_to_wrist,
-        "Angle shoulder-elbow-wrist": angle_shoulder_elbow_wrist,
-        "Symmetry score": symmetry_score
-    }
+
+    #Construct a dictionary with feature names and their values
+    # features = {
+    #     "Angle Left elbow shoulder hip": l_angle_eblow_shoulder_hip,
+    #     "Angle Left shoulder elbow wrist": l_angle_shoulder_elbow_wrist,
+    #     "Distance Left shoulder to elbow": l_dist_shoulder_to_elbow,
+    #     "Distance Left elbow to wrist": l_dist_elbow_to_wrist,
+    #     "Distance Left shoulder to wrist": l_dist_shoulder_to_wrist,
+
+    #     "Angle Right shoulder elbow wrist": r_angle_shoulder_elbow_wrist,
+    #     "Angle Right elbow shoulder hip": r_angle_eblow_shoulder_hip,
+    #     "Distance Right shoulder to elbow": r_dist_shoulder_to_elbow,
+    #     "Distance Right elbow to wrist": r_dist_elbow_to_wrist,
+    #     "Distance Right shoulder to wrist": r_dist_shoulder_to_wrist,
+    #     "Symmetry score": symmetry_score
+    # }
     # Other feature extraction techniques can be added here
-    
-    return features # center_x, center_y, dist_shoulder_to_elbow, dist_elbow_to_wrist, dist_shoulder_to_wrist, angle_shoulder_elbow_wrist, symmetry_score
+    # features = center_x, center_y, dist_shoulder_to_elbow, dist_elbow_to_wrist, dist_shoulder_to_wrist, angle_shoulder_elbow_wrist, symmetry_score
+    features = l_angle_eblow_shoulder_hip, l_angle_shoulder_elbow_wrist, l_dist_shoulder_to_elbow, l_dist_elbow_to_wrist, l_dist_shoulder_to_wrist, r_angle_shoulder_elbow_wrist, r_angle_eblow_shoulder_hip, r_dist_shoulder_to_elbow, r_dist_elbow_to_wrist, r_dist_shoulder_to_wrist, symmetry_score
+    return  features 
 
 def angle_between_three_points(p1, p2, p3):
     vector1 = p1 - p2
@@ -170,12 +187,13 @@ def plot_images(img_original, img_with_landmarks):
     # Show the plot
     plt.show()
 
+# print("class 1")
+# img = cv2.imread("../../Engine/Projects/myBodyPose/1_i-pose/1_i-pose_2.png")
+# image, landmarks = get_landmarks(img)
+# print(image.shape)
+# features = relative_positions_features(landmarks)
+# for feature_name, feature_value in features.items():
+#     print(f"{feature_name}: {feature_value}")
 
-img = cv2.imread("test.jpg")
-image, landmarks = get_landmarks(img)
-features = relative_positions_features(landmarks)
-for feature_name, feature_value in features.items():
-    print(f"{feature_name}: {feature_value}")
-
-# plot the image before and after in subplots
-plot_images(img, image)
+# # plot the image before and after in subplots
+# plot_images(img, image)

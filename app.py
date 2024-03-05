@@ -40,15 +40,20 @@ args = parser.parse_args()
 
 # ---- Event handlers ----
 def predict_frame(image):
-    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
-    pass
+    prediction = body_pose_classifier.predict(image)
+    
 def start_body_pose_train(path):
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
+    print("Reading data...")
     training_data = utils.read_data(path)
-    preprocessed_data = body_pose_classifier.preprocess(training_data)
-    features_map = body_pose_classifier.extract_features(preprocessed_data)
-    print(features_map["0"][0])
-    return 0
+    print("Getting keypoints...")
+    preprocessed_data, landmarks_map = body_pose_classifier.preprocess(training_data)
+    print("Extracting features...")
+    features_map = body_pose_classifier.get_training_features(landmarks_map)
+    print("Training...")
+    body_pose_classifier.train(features_map)
+    print("Training completed")
+    return "Training completed"
 
 
 # Map event names to handlers
@@ -104,7 +109,6 @@ def main():
             # Get the frame bytes
             event = message_obj["event"]
 
-
             # Call the event handler
             if event in EVENTS:
                 if event == "start_body_pose_train":
@@ -152,4 +156,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    start_body_pose_train("Projects/Project1")
+    start_body_pose_train("Projects/myBodyPose")
+    predict_frame()
