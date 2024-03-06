@@ -83,6 +83,27 @@ class EventHandlers:
         return 0
 
     # --- Hand Pose Classifier ---
+    def train_hand_pose(self, path):
+        # training_data is map {"Class Number(first character in the folder name)" : [images]}
+        print("Reading data...")
+        training_data = utils.read_data(path)
+        print("Extracting features...")
+        try:
+            features_map = self.hand_pose_classifier.preprocess(training_data)
+        except Exception as e:
+            print(f"Error in preprocess: {e}")
+            return -1
+        print("Training...")
+        try:
+            self.hand_pose_classifier.train(features_map)
+        except Exception as e:
+            print(f"Error in train: {e}")
+            return -1
+        # print("Saving model...")
+        # self.body_pose_classifier.save_model(path)
+        print("Training completed")
+        return 0
+
     def predict_hand_pose(self, image):
         preprocessed_img = self.hand_pose_classifier.preprocess(image)
         cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
