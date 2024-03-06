@@ -28,7 +28,9 @@ class EventHandlers:
             if event == "start_body_pose_train":
                 data_path = message_obj["path"]
                 self.EVENTS[event](data_path)
-
+            elif event == "train_hand_pose":
+                data_path = message_obj["path"]
+                self.EVENTS[event](data_path)
             elif event == "predict_frame":
                 frame_bytes = message_obj["frame"]
                 width_str = message_obj["width"]
@@ -99,12 +101,21 @@ class EventHandlers:
         except Exception as e:
             print(f"Error in train: {e}")
             return -1
-        # print("Saving model...")
-        # self.body_pose_classifier.save_model(path)
-        print("Training completed")
+        print("Saving model...")
+        model_path = "./hand_pose_model.pkl"
+        self.hand_pose_classifier.save(model_path)
+        print(f"Model saved to {model_path}")
+        print("Training completed successfully!")
         return 0
 
     def predict_hand_pose(self, image):
-        preprocessed_img = self.hand_pose_classifier.preprocess(image)
-        cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
-        pass
+        # preprocessed_img = self.hand_pose_classifier.preprocess(image)
+        # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
+        # self.hand_pose_classifier.load("./hand_pose_model.pkl")
+        try:
+            pred = self.hand_pose_classifier.predict(image)
+        except Exception as e:
+            print(f"Error in predict: {e}")
+            return -1
+        print(f"Predicted class: {pred}")
+        return pred
