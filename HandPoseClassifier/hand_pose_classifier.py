@@ -1,6 +1,7 @@
 import numpy as np
 
 from sklearn.svm import SVC
+import pickle
 
 # import sklearn
 from .hand_pose_utils import HandPoseUtils
@@ -37,5 +38,13 @@ class HandPoseClassifier:
         # features = features[0]
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)
-        print(f"Predicted class: {prediction[0]}")
+        # print(f"Predicted class: {prediction[0]}")
         return prediction[0]
+
+    def save(self, path):
+        # save the model to disk using pickle
+        pickle.dump(self.model, open(path, "wb"))
+
+    def load(self, path):
+        # load the model from disk
+        self.model = pickle.load(open(path, "rb"))
