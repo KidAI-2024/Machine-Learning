@@ -127,6 +127,106 @@ class HandPoseUtils:
         )
         return distance
 
+    def calculate_palm_ratio(self, landmarks):
+        if not landmarks:
+            return None, None, None
+
+        # Get palm landmarks (wrist and base of fingers).
+        palm_landmarks = [landmarks[0].landmark[i] for i in range(0, 21, 4)]
+
+        # Calculate palm width (distance between wrist landmarks).
+        palm_width = np.sqrt(
+            (palm_landmarks[0].x - palm_landmarks[1].x) ** 2
+            + (palm_landmarks[0].y - palm_landmarks[1].y) ** 2
+        )
+
+        # Calculate palm height (distance between base of fingers).
+        palm_height = np.sqrt(
+            (palm_landmarks[2].x - palm_landmarks[3].x) ** 2
+            + (palm_landmarks[2].y - palm_landmarks[3].y) ** 2
+        )
+
+        # Calculate ratios.
+        width_height_ratio = palm_width / palm_height
+
+        return palm_width, palm_height, width_height_ratio
+
+    def calculate_finger_curvature(self, landmarks):
+        if not landmarks:
+            return None
+
+        # Define finger joints for curvature calculation.
+        joints = [
+            [self.mp_hands.HandLandmark.WRIST, self.mp_hands.HandLandmark.THUMB_CMC],
+            [
+                self.mp_hands.HandLandmark.THUMB_CMC,
+                self.mp_hands.HandLandmark.THUMB_MCP,
+            ],
+            [self.mp_hands.HandLandmark.THUMB_MCP, self.mp_hands.HandLandmark.THUMB_IP],
+            [self.mp_hands.HandLandmark.THUMB_IP, self.mp_hands.HandLandmark.THUMB_TIP],
+            [
+                self.mp_hands.HandLandmark.INDEX_FINGER_MCP,
+                self.mp_hands.HandLandmark.INDEX_FINGER_PIP,
+            ],
+            # Add other fingers as needed...
+        ]
+
+        # Calculate angles for each finger joint.
+        finger_curvatures = []
+        for joint in joints:
+            start_point = landmarks[0].landmark[joint[0]]
+            mid_point = landmarks[0].landmark[joint[1]]
+            end_point = landmarks[0].landmark[joint[1] + 1]
+            # Calculate curvature using the angle between vectors.
+            vector1 = np.array(
+                [start_point.x - mid_point.x, start_point.y - mid_point.y]
+            )
+            vector2 = np.array([end_point.x - mid_point.x, end_point.y - mid_point.y])
+            dot_product = np.dot(vector1, vector2)
+            magnitude1 = np.linalg.norm(vector1)
+            magnitude2 = np.linalg.norm(vector2)
+            angle_rad = np.arccos(dot_product / (magnitude1 * magnitude2))
+            angle_deg = np.degrees(angle_rad)
+            finger_curvatures.append(angle_deg)
+
+        return finger_curvatures
+
+    def calculate_palm_center(self, landmarks):
+        if not landmarks:
+            return None, None
+
+        # Get palm landmarks (wrist and base of fingers).
+        palm_landmarks = [landmarks[0].landmark[i] for i in range(0, 21, 4)]
+
+        # Calculate center of palm as the midpoint between wrist landmarks.
+        center_x = (palm_landmarks[0].x + palm_landmarks[1].x) / 2
+        center_y = (palm_landmarks[0].y + palm_landmarks[1].y) / 2
+
+        return center_x, center_y
+
+    def calculate_finger_width_ratios(self, landmarks):
+        if not landmarks:
+            return None
+
+        # Get palm landmarks (wrist and base of fingers).
+        palm_landmarks = [landmarks[0].landmark[i] for i in range(0, 21, 4)]
+
+        # Calculate finger widths.
+        finger_widths = []
+        for i in range(1, 5):  # Assuming there are 5 fingers including thumb
+            finger_width = np.sqrt(
+                (palm_landmarks[0].x - landmarks[0].landmark[i * 4].x) ** 2
+                + (palm_landmarks[0].y - landmarks[0].landmark[i * 4].y) ** 2
+            )
+            finger_widths.append(finger_width)
+
+        # Calculate ratios.
+        width_ratios = [
+            finger_widths[i] / finger_widths[0] for i in range(1, len(finger_widths))
+        ]
+
+        return width_ratios
+
     # Add more methods for other features (e.g., palm features, finger spreads).
     def extract_features(self, image):
         # Get hand landmarks.
@@ -142,8 +242,36 @@ class HandPoseUtils:
         # print(f"Hand Shape Features: Area = {hand_area}, Perimeter = {hand_perimeter}")
         # print("Finger Angle Features:", thumb_index_angle_deg)
         # print("Finger Spread Features:", thumb_index_distance)
+
+        # Calculate palm width, height, and ratio features.
+        palm_width, palm_height, width_height_ratio = self.calculate_palm_ratio(
+            landmarks
+        )
+
+        # Calculate finger curvature features.
+        finger_curvatures = self.calculate_finger_curvature(landmarks)
+
+        # Calculate palm center features.
+        palm_center_x, palm_center_y = self.calculate_palm_center(landmarks)
+
+        # Calculate finger width ratio features.
+        finger_width_ratios = self.calculate_finger_width_ratios(landmarks)
+
+        # Concatenate all features into one array.
         features = np.array(
-            [hand_area, hand_perimeter, thumb_index_angle_deg, thumb_index_distance]
+            [
+                hand_area,
+                hand_perimeter,
+                thumb_index_angle_deg,
+                thumb_index_distance,
+                palm_width,
+                palm_height,
+                width_height_ratio,
+                palm_center_x,
+                palm_center_y,
+                *finger_curvatures,
+                *finger_width_ratios,
+            ]
         )
         return features
 
