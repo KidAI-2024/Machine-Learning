@@ -13,10 +13,12 @@ class HandPoseClassifier:
         self.hand_pose_utils = HandPoseUtils()
 
     def preprocess(self, data):
+        """Preprocess the data to extract features from the dictionary of images"""
         features_map = self.hand_pose_utils.get_training_features(data)
         return features_map
 
     def train(self, features_map):
+        """Train the model using the extracted features"""
         # Concatenate features and labels
         X_train = np.concatenate([features_map[key] for key in features_map])
         y_train = np.concatenate(
@@ -30,6 +32,7 @@ class HandPoseClassifier:
         self.model.fit(X_train, y_train)
 
     def predict(self, image):
+        """Predict the class of an image"""
         # ignore the image it was all black
         if np.all(image == 0):
             return -1
@@ -42,9 +45,9 @@ class HandPoseClassifier:
         return prediction[0]
 
     def save(self, path):
-        # save the model to disk using pickle
+        """Save the model to disk"""
         pickle.dump(self.model, open(path, "wb"))
 
     def load(self, path):
-        # load the model from disk
+        """Load the model from disk"""
         self.model = pickle.load(open(path, "rb"))

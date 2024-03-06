@@ -12,11 +12,13 @@ class HandPoseUtils:
         self.mp_drawing = mp.solutions.drawing_utils
 
     def get_hand_landmarks(self, image):
+        """Get hand landmarks from a single image."""
         # Convert the BGR image to RGB and process it with MediaPipe Hands.
         results = self.hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         return results.multi_hand_landmarks
 
     def draw_hand_landmarks(self, image, landmarks):
+        """Draw hand landmarks on an image."""
         image_with_landmarks = np.copy(image)
         # Draw hand landmarks of each hand.
         if landmarks:
@@ -28,6 +30,7 @@ class HandPoseUtils:
         return image_with_landmarks
 
     def camera_feed(self):
+        """Display webcam feed with hand landmarks. Press 'q' to quit. Press 's' to save the image with landmarks. Press 'd' to save the image without landmarks."""
         # Initialize the webcam.
         cap = cv2.VideoCapture(0)
         # Set the resolution to 320x180
@@ -72,6 +75,7 @@ class HandPoseUtils:
         cv2.destroyAllWindows()
 
     def calculate_hand_shape(self, landmarks):
+        """Calculate the area and perimeter of the hand shape using convex hull."""
         if not landmarks or not landmarks[0].landmark:
             print("No landmarks detected or landmarks contain no data.")
             return None, None
@@ -93,6 +97,7 @@ class HandPoseUtils:
             return None, None
 
     def calculate_finger_angles(self, landmarks):
+        """Calculate the angle between thumb and index finger."""
         # Calculate angles between finger joints.
         if not landmarks:
             return None
@@ -114,11 +119,11 @@ class HandPoseUtils:
         return angle_deg
 
     def calculate_finger_spread(self, landmarks):
-        # Calculate distance between fingertips of adjacent fingers.
+        """Calculate distance between thumb tip and index finger tip."""
         if not landmarks:
             return None
 
-        # Example: Calculate distance between thumb tip and index finger tip.
+        # Calculate distance between thumb tip and index finger tip.
         thumb_tip = landmarks[0].landmark[self.mp_hands.HandLandmark.THUMB_TIP]
         index_tip = landmarks[0].landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
 
@@ -128,6 +133,7 @@ class HandPoseUtils:
         return distance
 
     def calculate_palm_ratio(self, landmarks):
+        """Calculate palm width, height, and ratio."""
         if not landmarks:
             return None, None, None
 
@@ -152,6 +158,7 @@ class HandPoseUtils:
         return palm_width, palm_height, width_height_ratio
 
     def calculate_finger_curvature(self, landmarks):
+        """Calculate curvature of each finger."""
         if not landmarks:
             return None
 
@@ -192,6 +199,7 @@ class HandPoseUtils:
         return finger_curvatures
 
     def calculate_palm_center(self, landmarks):
+        """Calculate the center of the palm."""
         if not landmarks:
             return None, None
 
@@ -205,6 +213,7 @@ class HandPoseUtils:
         return center_x, center_y
 
     def calculate_finger_width_ratios(self, landmarks):
+        """Calculate width ratios of fingers."""
         if not landmarks:
             return None
 
@@ -227,8 +236,8 @@ class HandPoseUtils:
 
         return width_ratios
 
-    # Add more methods for other features (e.g., palm features, finger spreads).
     def extract_features(self, image):
+        """Extract hand pose features from a single image."""
         # Get hand landmarks.
         landmarks = self.get_hand_landmarks(image)
         # Draw hand landmarks on the image.
@@ -276,6 +285,7 @@ class HandPoseUtils:
         return features
 
     def get_training_features(self, training_data):
+        """Extract hand pose features from the dictionary of training images."""
         features_map = {}
         for class_name, images in training_data.items():
             features_list = []
