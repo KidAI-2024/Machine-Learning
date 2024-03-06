@@ -275,6 +275,16 @@ class HandPoseUtils:
         )
         return features
 
+    def get_training_features(self, training_data):
+        features_map = {}
+        for class_name, images in training_data.items():
+            features_list = []
+            for image in images:
+                features = self.extract_features(image)
+                features_list.append(features)
+            features_map[class_name] = features_list
+        return features_map
+
 
 if __name__ == "__main__":
     hand_pose_utils = HandPoseUtils()
