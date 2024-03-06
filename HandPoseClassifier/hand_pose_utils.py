@@ -72,19 +72,25 @@ class HandPoseUtils:
         cv2.destroyAllWindows()
 
     def calculate_hand_shape(self, landmarks):
-        # Calculate overall hand shape (e.g., convex hull area, perimeter).
-        if not landmarks:
-            return None
+        if not landmarks or not landmarks[0].landmark:
+            print("No landmarks detected or landmarks contain no data.")
+            return None, None
 
-        # Extract (x, y) coordinates of landmarks.
-        points = np.array([(lm.x, lm.y) for lm in landmarks[0].landmark])
+        points = np.array(
+            [(lm.x, lm.y) for lm in landmarks[0].landmark], dtype=np.float32
+        )
+        if len(points) < 3:
+            print("Insufficient landmarks to compute convex hull.")
+            return None, None
 
-        # Calculate convex hull area and perimeter.
-        hull = cv2.convexHull(points)
-        area = cv2.contourArea(hull)
-        perimeter = cv2.arcLength(hull, closed=True)
-
-        return {"hand_area": area, "hand_perimeter": perimeter}
+        try:
+            hull = cv2.convexHull(points)
+            area = cv2.contourArea(hull)
+            perimeter = cv2.arcLength(hull, closed=True)
+            return area, perimeter
+        except Exception as e:
+            print("Error while computing convex hull:", e)
+            return None, None
 
     def calculate_finger_angles(self, landmarks):
         # Calculate angles between finger joints.
@@ -105,9 +111,41 @@ class HandPoseUtils:
         angle_rad = np.arccos(dot_product / (magnitude1 * magnitude2))
         angle_deg = np.degrees(angle_rad)
 
-        return {"thumb_index_angle_deg": angle_deg}
+        return angle_deg
+
+    def calculate_finger_spread(self, landmarks):
+        # Calculate distance between fingertips of adjacent fingers.
+        if not landmarks:
+            return None
+
+        # Example: Calculate distance between thumb tip and index finger tip.
+        thumb_tip = landmarks[0].landmark[self.mp_hands.HandLandmark.THUMB_TIP]
+        index_tip = landmarks[0].landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
+
+        distance = np.sqrt(
+            (thumb_tip.x - index_tip.x) ** 2 + (thumb_tip.y - index_tip.y) ** 2
+        )
+        return distance
 
     # Add more methods for other features (e.g., palm features, finger spreads).
+    def extract_features(self, image):
+        # Get hand landmarks.
+        landmarks = self.get_hand_landmarks(image)
+        # Draw hand landmarks on the image.
+        # image_with_landmarks = self.draw_hand_landmarks(image, landmarks)
+        # Calculate hand shape features.
+        hand_area, hand_perimeter = self.calculate_hand_shape(landmarks)
+        # Calculate finger angle features.
+        thumb_index_angle_deg = self.calculate_finger_angles(landmarks)
+        # Calculate finger spread features.
+        thumb_index_distance = self.calculate_finger_spread(landmarks)
+        # print(f"Hand Shape Features: Area = {hand_area}, Perimeter = {hand_perimeter}")
+        # print("Finger Angle Features:", thumb_index_angle_deg)
+        # print("Finger Spread Features:", thumb_index_distance)
+        features = np.array(
+            [hand_area, hand_perimeter, thumb_index_angle_deg, thumb_index_distance]
+        )
+        return features
 
 
 if __name__ == "__main__":
@@ -119,10 +157,16 @@ if __name__ == "__main__":
     image_path = os.path.join("test_images", "hand_image_1709731770.3709466.jpg")
     image = cv2.imread(image_path)
 
-    # -- feature extraction --
-    landmarks = hand_pose_utils.get_hand_landmarks(image)
-    hand_shape_features = hand_pose_utils.calculate_hand_shape(landmarks)
-    finger_angle_features = hand_pose_utils.calculate_finger_angles(landmarks)
+    ## -- display image --
+    # while True:
+    #     # Display the frame.
+    #     cv2.imshow("MediaPipe Hands", image)
+    #     # Wait for a key press
+    #     key = cv2.waitKey(5)
+    #     # Break the loop if 'q' is pressed.
+    #     if key & 0xFF == ord("q"):
+    #         break
 
-    print("Hand Shape Features:", hand_shape_features)
-    print("Finger Angle Features:", finger_angle_features)
+    # -- feature extraction --
+    features = hand_pose_utils.extract_features(image)
+    print("Features:", features)
