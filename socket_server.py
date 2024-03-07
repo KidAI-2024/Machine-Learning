@@ -68,6 +68,6 @@ class SocketServer:
             self.socket.sendto(binary, addr)
 
     def trainBodyPose(self):
-        self.event_handlers.start_body_pose_train("Projects/test")
+        self.event_handlers.start_body_pose_train("Projects/bodyPose")
         # image = cv2.imread("../Engine/Projects/test/0_t-pose/0_t-pose_4.png")
         # res = self.event_handlers.predict_frame(image)

@@ -58,6 +58,8 @@ class BodyPoseClassifier:
         self.model.fit(X_train, y_train)
 
     def predict(self, image):
+        if self.model is None:
+            return "Model not trained"
         # ignore the image it was all black
         if np.all(image == 0):
             return -1

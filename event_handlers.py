@@ -55,7 +55,11 @@ class EventHandlers:
     # --- General ---
     def predict_frame(self, image):
         # cv2.imwrite(f"frame_{time.time()}.png", image)
-        prediction = self.body_pose_classifier.predict(image)
+        try:
+            prediction = self.body_pose_classifier.predict(image)
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            prediction = "Error"
         return prediction
         
     def start_body_pose_train(self, path):
