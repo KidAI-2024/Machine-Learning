@@ -17,6 +17,10 @@ class HandPoseClassifier:
         features_map = self.hand_pose_utils.get_training_features(data)
         return features_map
 
+    def preprocess_draw_landmarks(self, image):
+        landmarks = self.hand_pose_utils.get_landmarks(image)
+        return self.hand_pose_utils.draw_landmarks(image, landmarks)
+
     def train(self, features_map):
         """Train the model using the extracted features"""
         # Concatenate features and labels

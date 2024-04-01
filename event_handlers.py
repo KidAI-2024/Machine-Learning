@@ -113,7 +113,7 @@ class EventHandlers:
 
     # ---------- Hand Pose Classifier ----------
     def preprocess_hand_pose(self, image):
-        return image
+        return self.hand_pose_classifier.preprocess_draw_landmarks(image)
 
     def train_hand_pose(self, path):
         # training_data is map {"Class Number(first character in the folder name)" : [images]}
