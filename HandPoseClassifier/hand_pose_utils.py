@@ -24,9 +24,13 @@ class HandPoseUtils:
             )
             return None
 
-    def draw_hand_landmarks(self, image, landmarks):
+    def draw_hand_landmarks(self, image, landmarks, copy=False):
         """Draw hand landmarks on an image."""
-        image_with_landmarks = np.copy(image)
+        # Make a copy of the image if copy is True.
+        if copy:
+            image_with_landmarks = np.copy(image)
+        else:
+            image_with_landmarks = image
         # Draw hand landmarks of each hand.
         if landmarks:
             for hand_landmarks in landmarks:
