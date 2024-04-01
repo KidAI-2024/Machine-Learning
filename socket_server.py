@@ -86,7 +86,7 @@ class SocketServer:
             self.FPS = 0
 
     def build_response_message(self, event, message) -> Dict[str, str]:
-        response = {"event": event}
+        response = {"event": event, "FPS": str(self.FPS)}
         if event == "predict_frame":
             response["prediction"] = message
         elif event == "start_body_pose_train":
