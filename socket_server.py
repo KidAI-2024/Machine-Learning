@@ -17,6 +17,7 @@ class SocketServer:
         self.socket.bind((self.host, self.port))
         print(f"Listening on {self.host} port {self.port}")
         # Initialize the FPS counter
+        self.FPS_count = 0
         self.FPS = 0
         self.FPS_previous_time = time.time()
         #
@@ -79,11 +80,12 @@ class SocketServer:
             self.respond(res_message, addr)
 
     def _count_FPS(self):
-        self.FPS += 1
+        self.FPS_count += 1
         if time.time() - self.FPS_previous_time > 1:
-            print(f"FPS: {self.FPS}")
+            print(f"FPS: {self.FPS_count}")
             self.FPS_previous_time = time.time()
-            self.FPS = 0
+            self.FPS = self.FPS_count
+            self.FPS_count = 0
 
     def build_response_message(self, event, message) -> Dict[str, str]:
         response = {"event": event, "FPS": str(self.FPS)}
@@ -123,7 +125,12 @@ class SocketServer:
                 self.socket.sendto(last_chunk, addr)
 
     def _respond_complete_message(self, response_bytes, addr):
-        self.socket.sendto(response_bytes, addr)
+        try:
+            self.socket.sendto(response_bytes, addr)
+        except Exception as e:
+            print(
+                f"Error sending response in socket_server::_respond_complete_message: {e}"
+            )
 
     def close(self):
         self.socket.close()
