@@ -18,8 +18,12 @@ class HandPoseClassifier:
         return features_map
 
     def preprocess_draw_landmarks(self, image):
-        landmarks = self.hand_pose_utils.get_landmarks(image)
-        return self.hand_pose_utils.draw_landmarks(image, landmarks)
+        try:
+            landmarks = self.hand_pose_utils.get_hand_landmarks(image)
+            return self.hand_pose_utils.draw_hand_landmarks(image, landmarks)
+        except Exception as e:
+            print(f"Error in preprocess_draw_landmarks: {e}")
+            return image
 
     def train(self, features_map):
         """Train the model using the extracted features"""

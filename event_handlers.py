@@ -1,4 +1,3 @@
-import logging
 import utils
 import cv2
 import time
@@ -43,16 +42,17 @@ class EventHandlers:
                     width = int(width_str)
                 except ValueError:
                     width = 320
-                    logging.error(f"Invalid width: {width_str}")
+                    print(f"Invalid width: {width_str}")
                 try:
                     height = int(height_str)
                 except ValueError:
                     height = 180
-                    logging.error(f"Invalid height: {height_str}")
+                    print(f"Invalid height: {height_str}")
                 # Convert the bytes to an image
-                image = utils.bytes_to_image(frame_bytes, (height, width, 3))
+                image = utils.b64string_to_image(frame_bytes, (height, width, 3))
                 preprocessed_image = self.EVENTS[event](image)
-                res = utils.image_to_bytes(preprocessed_image)
+                res = utils.image_to_b64string(preprocessed_image)
+
             elif event == "train_hand_pose":
                 data_path = message_obj["path"]
                 self.EVENTS[event](data_path)
@@ -65,14 +65,14 @@ class EventHandlers:
                     width = int(width_str)
                 except ValueError:
                     width = 320
-                    logging.error(f"Invalid width: {width_str}")
+                    print(f"Invalid width: {width_str}")
                 try:
                     height = int(height_str)
                 except ValueError:
                     height = 180
-                    logging.error(f"Invalid height: {height_str}")
+                    print(f"Invalid height: {height_str}")
                 # Convert the bytes to an image
-                image = utils.bytes_to_image(frame_bytes, (height, width, 3))
+                image = utils.b64string_to_image(frame_bytes, (height, width, 3))
                 self.EVENTS[event](image)
             # --------------- General ------------------
             elif event == "predict_frame":
@@ -83,17 +83,17 @@ class EventHandlers:
                     width = int(width_str)
                 except ValueError:
                     width = 320
-                    logging.error(f"Invalid width: {width_str}")
+                    print(f"Invalid width: {width_str}")
                 try:
                     height = int(height_str)
                 except ValueError:
                     height = 180
-                    logging.error(f"Invalid height: {height_str}")
+                    print(f"Invalid height: {height_str}")
                 # Convert the bytes to an image
-                image = utils.bytes_to_image(frame_bytes, (height, width, 3))
+                image = utils.b64string_to_image(frame_bytes, (height, width, 3))
                 res = self.EVENTS[event](image)
         else:
-            logging.error(f"Event '{event}' not found")
+            print(f"Event '{event}' not found")
         return res
 
     # ------- Event handlers -------
@@ -113,6 +113,7 @@ class EventHandlers:
 
     # ---------- Hand Pose Classifier ----------
     def preprocess_hand_pose(self, image):
+        # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
         return self.hand_pose_classifier.preprocess_draw_landmarks(image)
 
     def train_hand_pose(self, path):

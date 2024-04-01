@@ -1,9 +1,9 @@
 import time
+from typing import Dict
 import numpy as np
 import cv2
 import base64
 import socket
-import logging
 import json
 
 
@@ -15,22 +15,22 @@ class SocketServer:
         self.event_handlers = event_handlers
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.host, self.port))
-        logging.info(f"Listening on {self.host} port {self.port}")
+        print(f"Listening on {self.host} port {self.port}")
         # Initialize the FPS counter
         self.FPS = 0
         self.FPS_previous_time = time.time()
         #
         # Get the current receive buffer size
-        recv_buffer_size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
-        logging.info(f"Current receive buffer size: {recv_buffer_size} bytes")
+        # recv_buffer_size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        # print(f"Current receive buffer size: {recv_buffer_size} bytes")
         # set udp socket buffer size to 2MB
         self.receive_buffer_size = 2 * 1024 * 1024
-        logging.info(f"Setting buffer size to: {self.receive_buffer_size} bytes")
+        # print(f"Setting buffer size to: {self.receive_buffer_size} bytes")
         self.socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_RCVBUF, self.receive_buffer_size
         )
         recv_buffer_size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
-        logging.info(f"Current receive buffer size: {recv_buffer_size} bytes")
+        print(f"Current receive buffer size: {recv_buffer_size} bytes")
         # self.event_handlers = event_handlers
 
     def receive_message(self):
@@ -81,14 +81,12 @@ class SocketServer:
     def _count_FPS(self):
         self.FPS += 1
         if time.time() - self.FPS_previous_time > 1:
-            logging.info(f"FPS: {self.FPS}")
+            print(f"FPS: {self.FPS}")
             self.FPS_previous_time = time.time()
             self.FPS = 0
 
-    def build_response_message(self, event, message):
-        response = {
-            "event": event,
-        }
+    def build_response_message(self, event, message) -> Dict[str, str]:
+        response = {"event": event}
         if event == "predict_frame":
             response["prediction"] = message
         elif event == "start_body_pose_train":
@@ -96,14 +94,18 @@ class SocketServer:
         elif event == "preprocess_hand_pose":
             response["preprocessed_image"] = message
         else:
-            logging.warning(f"Event '{event}' not found in build_response_message")
+            print(f"Event '{event}' not found in build_response_message")
             response["message"] = message
         return response
 
-    def respond(self, response, addr):
-        response_bytes = json.dumps(response).encode("utf-8")
+    def respond(self, response: Dict[str, str], addr):
+        try:
+            response_str = json.dumps(response)
+            response_bytes = response_str.encode("utf-8")
+        except Exception as e:
+            print(f"Error encoding response in socket_server::respond: {e}")
+            return
         self._respond_complete_message(response_bytes, addr)
-        logging.info(f"Response sent to {addr}")
 
     def _respond_in_chunks(self, response_bytes, addr):
         # split the response into chunks of size self.CHUNK_SIZE
@@ -125,4 +127,4 @@ class SocketServer:
 
     def close(self):
         self.socket.close()
-        logging.info("Socket closed")
+        print("Socket closed")

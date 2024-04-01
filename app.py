@@ -1,4 +1,3 @@
-import logging
 import argparse
 
 from socket_server import SocketServer
@@ -14,9 +13,6 @@ hand_pose_classifier = HandPoseClassifier()
 image_classifier = ImageClassifier()
 body_pose_classifier = BodyPoseClassifier()
 audio_classifier = AudioClassifier()
-
-# Logging configuration
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # Argument parsing
 parser = argparse.ArgumentParser(

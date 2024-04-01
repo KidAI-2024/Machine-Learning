@@ -14,8 +14,15 @@ class HandPoseUtils:
     def get_hand_landmarks(self, image):
         """Get hand landmarks from a single image."""
         # Convert the BGR image to RGB and process it with MediaPipe Hands.
-        results = self.hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        return results.multi_hand_landmarks
+        try:
+            results = self.hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            return results.multi_hand_landmarks
+        except Exception as e:
+            print(
+                "Error while processing image in hand_pose_utils::get_hand_landmarks:",
+                e,
+            )
+            return None
 
     def draw_hand_landmarks(self, image, landmarks):
         """Draw hand landmarks on an image."""
