@@ -21,6 +21,9 @@ class EventHandlers:
             # ---------- Body Pose Classifier ----------
             "start_body_pose_train": self.start_body_pose_train,
             # ---------- Hand Pose Classifier ----------
+            "start_feed_hand_pose": self.start_feed_hand_pose,
+            "stop_feed_hand_pose": self.stop_feed_hand_pose,
+            "get_feed_frame_handpose": self.get_feed_frame_handpose,
             "preprocess_hand_pose": self.preprocess_hand_pose,
             "predict_hand_pose": self.predict_hand_pose,
         }
@@ -73,6 +76,22 @@ class EventHandlers:
                 # Convert the bytes to an image
                 image = utils.b64string_to_image(frame_bytes, (height, width, 3))
                 self.EVENTS[event](image)
+            elif event == "start_feed_hand_pose":
+                res = self.EVENTS[event]()
+                res = "success" if res == 0 else "failed"
+
+            elif event == "stop_feed_hand_pose":
+                res = self.EVENTS[event]()
+                res = "success" if res == 0 else "failed"
+
+            elif event == "get_feed_frame_handpose":
+                frame = self.EVENTS[event]()
+                # draw landmarks on the image
+                if frame is not None:
+                    preprocessed_frame = self.preprocess_hand_pose(frame)
+                    res = utils.image_to_b64string(preprocessed_frame)
+                else:
+                    res = frame
             # --------------- General ------------------
             elif event == "predict_frame":
                 frame_bytes = message_obj["frame"]
@@ -111,6 +130,18 @@ class EventHandlers:
         return 0
 
     # ---------- Hand Pose Classifier ----------
+    def start_feed_hand_pose(self):
+        # start camera feed
+        return self.hand_pose_classifier.start_feed()
+
+    def stop_feed_hand_pose(self):
+        # stop camera feed
+        return self.hand_pose_classifier.stop_feed()
+
+    def get_feed_frame_handpose(self):
+        frame = self.hand_pose_classifier.get_frame()
+        return frame
+
     def preprocess_hand_pose(self, image):
         # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
         return self.hand_pose_classifier.preprocess_draw_landmarks(image)

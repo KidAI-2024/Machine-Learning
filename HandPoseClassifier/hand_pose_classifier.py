@@ -5,12 +5,14 @@ import pickle
 
 # import sklearn
 from .hand_pose_utils import HandPoseUtils
+from camera_feed import CameraFeed
 
 
 class HandPoseClassifier:
     def __init__(self):
         self.model = SVC(kernel="linear")
         self.hand_pose_utils = HandPoseUtils()
+        self.camera = CameraFeed()
 
     def preprocess(self, data):
         """Preprocess the data to extract features from the dictionary of images"""
@@ -51,6 +53,18 @@ class HandPoseClassifier:
         prediction = self.model.predict(features)
         # print(f"Predicted class: {prediction[0]}")
         return prediction[0]
+
+    def start_feed(self):
+        """Start the camera feed"""
+        return self.camera.start_feed()
+
+    def stop_feed(self):
+        """Stop the camera feed"""
+        return self.camera.stop_feed()
+
+    def get_frame(self):
+        """Get a frame from the camera feed"""
+        return self.camera.get_latest_frame()
 
     def save(self, path):
         """Save the model to disk"""

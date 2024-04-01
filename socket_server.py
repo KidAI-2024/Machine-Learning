@@ -79,6 +79,17 @@ class SocketServer:
             res_message = self.build_response_message(event, handler_res)
             self.respond(res_message, addr)
 
+    # def _send_camera_feed_hand_pose(self, addr):
+    #     # Get a frame from the camera feed
+    #     frame = self.event_handlers.handle_event("get_feed_frame_handpose", {})
+    #     print("inside _send_camera_feed_hand_pose")
+    #     if frame is not None:
+    #         # Convert the image to bytes
+    #         # Send the frame to the client
+    #         response = self.build_response_message("get_feed_frame_handpose", frame)
+    #         self._count_FPS()
+    #         self.respond(response, addr)
+
     def _count_FPS(self):
         self.FPS_count += 1
         if time.time() - self.FPS_previous_time > 1:
@@ -89,12 +100,16 @@ class SocketServer:
 
     def build_response_message(self, event, message) -> Dict[str, str]:
         response = {"event": event, "FPS": str(self.FPS)}
+        # --------------- General ------------------
         if event == "predict_frame":
             response["prediction"] = message
+        # --------------- Hand Pose ------------------
         elif event == "start_body_pose_train":
             response["message"] = message
         elif event == "preprocess_hand_pose":
             response["preprocessed_image"] = message
+        elif event == "get_feed_frame_handpose":
+            response["frame"] = message
         else:
             print(f"Event '{event}' not found in build_response_message")
             response["message"] = message
@@ -104,10 +119,10 @@ class SocketServer:
         try:
             response_str = json.dumps(response)
             response_bytes = response_str.encode("utf-8")
+            self._respond_complete_message(response_bytes, addr)
         except Exception as e:
-            print(f"Error encoding response in socket_server::respond: {e}")
+            print(f"Error in socket_server::respond: {e}")
             return
-        self._respond_complete_message(response_bytes, addr)
 
     def _respond_in_chunks(self, response_bytes, addr):
         # split the response into chunks of size self.CHUNK_SIZE
@@ -127,10 +142,9 @@ class SocketServer:
     def _respond_complete_message(self, response_bytes, addr):
         try:
             self.socket.sendto(response_bytes, addr)
-        except Exception as e:
-            print(
-                f"Error sending response in socket_server::_respond_complete_message: {e}"
-            )
+        except:
+            print(f"Error sending response in socket_server::_respond_complete_message")
+            return
 
     def close(self):
         self.socket.close()
