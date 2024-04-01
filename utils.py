@@ -39,3 +39,14 @@ def bytes_to_image(frame_bytes, shape):
     # Flip the image vertically
     image = cv2.flip(image, 0)
     return image
+
+
+def image_to_bytes(image):
+    # Flip the image vertically
+    image = cv2.flip(image, 0)
+    # Convert the image from RGB to BGR
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    # Encode the image to bytes
+    _, buffer = cv2.imencode(".jpg", image)
+    image_bytes = base64.b64encode(buffer)
+    return image_bytes

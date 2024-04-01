@@ -16,15 +16,41 @@ class EventHandlers:
         self.audio_classifier = audio_classifier
 
         self.EVENTS = {
+            # --------------- General ------------------
             "predict_frame": self.predict_frame,
+            # ---------- Body Pose Classifier ----------
             "start_body_pose_train": self.start_body_pose_train,
+            # ---------- Hand Pose Classifier ----------
+            "preprocess_hand_pose": self.preprocess_hand_pose,
         }
 
     def handle_event(self, event, message_obj):
+        res = None
         if event in self.EVENTS:
+            # ---------- Body Pose Classifier ----------
             if event == "start_body_pose_train":
                 data_path = message_obj["path"]
                 self.EVENTS[event](data_path)
+            # ---------- Hand Pose Classifier ----------
+            elif event == "preprocess_hand_pose":
+                frame_bytes = message_obj["frame"]
+                width_str = message_obj["width"]
+                height_str = message_obj["height"]
+                try:
+                    width = int(width_str)
+                except ValueError:
+                    width = 320
+                    logging.error(f"Invalid width: {width_str}")
+                try:
+                    height = int(height_str)
+                except ValueError:
+                    height = 180
+                    logging.error(f"Invalid height: {height_str}")
+                # Convert the bytes to an image
+                image = utils.bytes_to_image(frame_bytes, (height, width, 3))
+                preprocessed_image = self.EVENTS[event](image)
+                res = utils.image_to_bytes(preprocessed_image)
+            # --------------- General ------------------
             elif event == "predict_frame":
                 frame_bytes = message_obj["frame"]
                 width_str = message_obj["width"]
@@ -41,9 +67,10 @@ class EventHandlers:
                     logging.error(f"Invalid height: {height_str}")
                 # Convert the bytes to an image
                 image = utils.bytes_to_image(frame_bytes, (height, width, 3))
-                self.EVENTS[event](image)
+                res = self.EVENTS[event](image)
         else:
             logging.error(f"Event '{event}' not found")
+        return res
 
     # ------- Event handlers -------
 
@@ -59,3 +86,7 @@ class EventHandlers:
         for key in training_data:
             print(f"Training for class {key} length: {len(training_data[key])}")
         return 0
+
+    # ---------- Hand Pose Classifier ----------
+    def preprocess_hand_pose(self, image):
+        return image
