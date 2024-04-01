@@ -29,7 +29,7 @@ def read_data(path):
     return training_data
 
 
-def bytes_to_image(frame_bytes, shape):
+def b64string_to_image(frame_bytes, shape):
     # Get the image data
     image_data = base64.b64decode(frame_bytes)
     color_array = np.frombuffer(image_data, dtype=np.uint8)
@@ -39,3 +39,16 @@ def bytes_to_image(frame_bytes, shape):
     # Flip the image vertically
     image = cv2.flip(image, 0)
     return image
+
+
+def image_to_b64string(image):
+    # # Flip the image vertically
+    # image = cv2.flip(image, 0)
+    # # Convert the image from RGB to BGR
+    # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    # Encode the image to bytes
+    _, buffer = cv2.imencode(".jpg", image)
+    # encode to base64 string
+    image_bytes = base64.b64encode(buffer)
+    image_str = image_bytes.decode("utf-8")
+    return image_str
