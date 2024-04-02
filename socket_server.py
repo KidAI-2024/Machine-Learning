@@ -12,7 +12,7 @@ class SocketServer:
         port: int,
         event_handlers: EventHandlers,
     ):
-        self.CHUNK_SIZE = 60000
+        self.CHUNK_SIZE = 60 * 1024
         self.host = host
         self.port = port
         self.event_handlers = event_handlers
@@ -29,18 +29,30 @@ class SocketServer:
         # print(f"Current receive buffer size: {recv_buffer_size} bytes")
         # set udp socket buffer size to 2MB
         self.receive_buffer_size = 2 * 1024 * 1024
+        self.send_buffer_size = 2 * 1024 * 1024
         # print(f"Setting buffer size to: {self.receive_buffer_size} bytes")
         self.socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_RCVBUF, self.receive_buffer_size
         )
         recv_buffer_size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
         print(f"Current receive buffer size: {recv_buffer_size} bytes")
+        # set send buffer size to 2MB
+        self.socket.setsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF, self.send_buffer_size
+        )
+        snd_buffer_size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        print(f"Current send buffer size: {snd_buffer_size} bytes")
         # self.event_handlers = event_handlers
 
     def receive_message(self):
         """Receives a message from a UDP socket and returns it as a dictionary and the address of the sender."""
         # Initialize the image data
-        message_bytes, addr = self._receive_message_in_chunks()
+        try:
+            message_bytes, addr = self._receive_message_in_chunks()
+        except socket.error as e:
+            raise e
+        except Exception as e:
+            raise e
         # Convert bytes to json
         message_string = message_bytes.decode("utf-8")
         message_obj = json.loads(message_string)
@@ -50,7 +62,14 @@ class SocketServer:
     def _receive_message_in_chunks(self):
         message_bytes = b""
         while True:
-            chunk, addr = self.socket.recvfrom(self.CHUNK_SIZE)
+            try:
+                chunk, addr = self.socket.recvfrom(self.CHUNK_SIZE)
+            except socket.error as e:
+                print(f"Error in socket_server::_receive_message_in_chunks: {e}")
+                raise e
+            except Exception as e:
+                print(f"Error in socket_server::_receive_message_in_chunks: {e}")
+                raise e
             message_bytes += chunk
             if len(chunk) < self.CHUNK_SIZE:
                 break
@@ -64,7 +83,12 @@ class SocketServer:
 
         while True:
             # Receive message from the socket
-            message_obj, addr = self.receive_message()
+            try:
+                message_obj, addr = self.receive_message()
+            except socket.error as e:
+                continue
+            except Exception as e:
+                continue
             # Count the FPS
             self._count_FPS()
 
@@ -109,31 +133,73 @@ class SocketServer:
             response_str = json.dumps(response)
             response_bytes = response_str.encode("utf-8")
             self._respond_complete_message(response_bytes, addr)
+        except socket.error as e:
+            return
         except Exception as e:
-            print(f"Error in socket_server::respond: {e}")
             return
 
     def _respond_in_chunks(self, response_bytes: bytes, addr):
         # split the response into chunks of size self.CHUNK_SIZE
         if len(response_bytes) < self.CHUNK_SIZE:
-            self.socket.sendto(response_bytes, addr)
+            try:
+                self.socket.sendto(response_bytes, addr)
+            except socket.error as e:
+                print(
+                    f"Error sending response in socket_server::_respond_in_chunks: {e}"
+                )
+                raise e
+            except Exception as e:
+                print(
+                    f"Error sending response in socket_server::_respond_in_chunks: {e}"
+                )
+                raise e
         else:
             for i in range(0, len(response_bytes), self.CHUNK_SIZE):
-                chunk = response_bytes[i : i + self.CHUNK_SIZE]
-                self.socket.sendto(chunk, addr)
+                try:
+                    chunk = response_bytes[i : i + self.CHUNK_SIZE]
+                    self.socket.sendto(chunk, addr)
+                except socket.error as e:
+                    print(
+                        f"Error sending response in socket_server::_respond_in_chunks: {e}"
+                    )
+                    raise e
+                except Exception as e:
+                    print(
+                        f"Error sending response in socket_server::_respond_in_chunks: {e}"
+                    )
+                    raise e
+
             # Handle the last chunk
             if len(response_bytes) % self.CHUNK_SIZE != 0:
-                last_chunk = response_bytes[
-                    len(response_bytes) - (len(response_bytes) % self.CHUNK_SIZE) :
-                ]
-                self.socket.sendto(last_chunk, addr)
+                try:
+                    last_chunk = response_bytes[
+                        len(response_bytes) - (len(response_bytes) % self.CHUNK_SIZE) :
+                    ]
+                    self.socket.sendto(last_chunk, addr)
+                except socket.error as e:
+                    print(
+                        f"Error sending response in socket_server::_respond_in_chunks: {e}"
+                    )
+                    raise e
+                except Exception as e:
+                    print(
+                        f"Error sending response in socket_server::_respond_in_chunks: {e}"
+                    )
+                    raise e
 
     def _respond_complete_message(self, response_bytes: bytes, addr):
         try:
             self.socket.sendto(response_bytes, addr)
-        except:
-            print(f"Error sending response in socket_server::_respond_complete_message")
-            return
+        except socket.error as e:
+            print(
+                f"Error sending response in socket_server::_respond_complete_message: {e}"
+            )
+            raise e
+        except Exception as e:
+            print(
+                f"Error sending response in socket_server::_respond_complete_message: {e}"
+            )
+            raise e
 
     def close(self):
         self.socket.close()
