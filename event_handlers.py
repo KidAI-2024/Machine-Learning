@@ -1,15 +1,37 @@
 from typing import Any, Dict
 import utils
 import time
+from HandPoseClassifier.hand_pose_classifier import HandPoseClassifier
+from ImageClassifier.image_classifier import ImageClassifier
+from BodyPoseClassifier.body_pose_classifier import BodyPoseClassifier
+from AudioClassifier.audio_classifier import AudioClassifier
+
+"""
+=============================================
+=============================================
+========= STEPS TO ADD A NEW EVENT ==========
+=============================================
+=============================================
+1. Add the event name to the self.EVENTS dictionary in the __init__ method.
+2. Add the event handler method to the class (under EVENT HANDLERS).
+3. Add the event handler method to self.EVENTS dictionary with the corresponding event name.
+4. Add the event handler method to the handle_event method.
+5. Add the event to the build_response_message method to define the response message structure.
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+"""
 
 
 class EventHandlers:
     def __init__(
         self,
-        hand_pose_classifier,
-        image_classifier,
-        body_pose_classifier,
-        audio_classifier,
+        hand_pose_classifier: HandPoseClassifier,
+        image_classifier: ImageClassifier,
+        body_pose_classifier: BodyPoseClassifier,
+        audio_classifier: AudioClassifier,
     ):
         self.hand_pose_classifier = hand_pose_classifier
         self.image_classifier = image_classifier
@@ -17,26 +39,56 @@ class EventHandlers:
         self.audio_classifier = audio_classifier
 
         self.EVENTS = {
+            # ------------------------------------------
+            # ------------------------------------------
             # --------------- General ------------------
+            # ------------------------------------------
+            # ------------------------------------------
             "predict_frame": self.predict_frame,
+            # ------------------------------------------
+            # ------------------------------------------
             # ---------- Body Pose Classifier ----------
+            # ------------------------------------------
+            # ------------------------------------------
             "start_body_pose_train": self.start_body_pose_train,
+            # ------------------------------------------
+            # ------------------------------------------
             # ---------- Hand Pose Classifier ----------
+            # ------------------------------------------
+            # ------------------------------------------
             "start_feed_hand_pose": self.start_feed_hand_pose,
             "stop_feed_hand_pose": self.stop_feed_hand_pose,
             "get_feed_frame_handpose": self.get_feed_frame_handpose,
             "preprocess_hand_pose": self.preprocess_hand_pose,
             "predict_hand_pose": self.predict_hand_pose,
+            # ------------------------------------------
+            # ------------------------------------------
+            # ------------ Image Classifier ------------
+            # ------------------------------------------
+            # ------------------------------------------
+            # ------------------------------------------
+            # ------------------------------------------
+            # ------------ Audio Classifier ------------
+            # ------------------------------------------
+            # ------------------------------------------
         }
 
-    def handle_event(self, event, message_obj):
+    def handle_event(self, event: str, message_obj: Dict[str, Any]) -> Any:
         res = None
         if event in self.EVENTS:
+            # ------------------------------------------
+            # ------------------------------------------
             # ---------- Body Pose Classifier ----------
+            # ------------------------------------------
+            # ------------------------------------------
             if event == "start_body_pose_train":
                 data_path = message_obj["path"]
                 self.EVENTS[event](data_path)
+            # ------------------------------------------
+            # ------------------------------------------
             # ---------- Hand Pose Classifier ----------
+            # ------------------------------------------
+            # ------------------------------------------
             elif event == "preprocess_hand_pose":
                 frame_bytes = message_obj["frame"]
                 width_str = message_obj["width"]
@@ -93,7 +145,23 @@ class EventHandlers:
                     res = utils.image_to_b64string(preprocessed_frame)
                 else:
                     res = frame
+            # ------------------------------------------
+            # ------------------------------------------
+            # ------------ Image Classifier ------------
+            # ------------------------------------------
+            # ------------------------------------------
+
+            # ------------------------------------------
+            # ------------------------------------------
+            # ------------ Audio Classifier ------------
+            # ------------------------------------------
+            # ------------------------------------------
+
+            # ------------------------------------------
+            # ------------------------------------------
             # --------------- General ------------------
+            # ------------------------------------------
+            # ------------------------------------------
             elif event == "predict_frame":
                 frame_bytes = message_obj["frame"]
                 width_str = message_obj["width"]
@@ -111,6 +179,11 @@ class EventHandlers:
                 # Convert the bytes to an image
                 image = utils.b64string_to_image(frame_bytes, (height, width, 3))
                 res = self.EVENTS[event](image)
+            # ------------------------------------------
+            # ------------------------------------------
+            # ---------------- ERROR -------------------
+            # ------------------------------------------
+            # ------------------------------------------
         else:
             print(f"Event '{event}' not found")
         return res
@@ -122,29 +195,66 @@ class EventHandlers:
         message: Any,
     ) -> Dict[str, str]:
         response = {"event": event, "FPS": fps}
+        # ------------------------------------------
+        # ------------------------------------------
         # --------------- General ------------------
+        # ------------------------------------------
+        # ------------------------------------------
         if event == "predict_frame":
             response["prediction"] = message
-        # --------------- Hand Pose ------------------
+        # ------------------------------------------
+        # ------------------------------------------
+        # ---------- Hand Pose Classifier ----------
+        # ------------------------------------------
+        # ------------------------------------------
         elif event == "start_body_pose_train":
             response["message"] = message
         elif event == "preprocess_hand_pose":
             response["preprocessed_image"] = message
         elif event == "get_feed_frame_handpose":
             response["frame"] = message
+        # ------------------------------------------
+        # ------------------------------------------
+        # ------------ Image Classifier ------------
+        # ------------------------------------------
+        # ------------------------------------------
+
+        # ------------------------------------------
+        # ------------------------------------------
+        # ------------ Audio Classifier ------------
+        # ------------------------------------------
+        # ------------------------------------------
+
+        # ------------------------------------------
+        # ------------------------------------------
+        # ---------------- ERROR -------------------
+        # ------------------------------------------
+        # ------------------------------------------
         else:
             print(f"Event '{event}' not found in build_response_message")
             response["message"] = message
         return response
 
-    # ------- Event handlers -------
+    # ============================================
+    # ============================================
+    # ============= EVENT HANDLERS ===============
+    # ============================================
+    # ============================================
 
-    # --- General ---
+    # ------------------------------------------
+    # ------------------------------------------
+    # --------------- General ------------------
+    # ------------------------------------------
+    # ------------------------------------------
     def predict_frame(self, image):
         # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
         pass
 
-    # --- Body Pose Classifier ---
+    # ------------------------------------------
+    # ------------------------------------------
+    # ---------- Body Pose Classifier ----------
+    # ------------------------------------------
+    # ------------------------------------------
     def start_body_pose_train(self, path):
         # training_data is map {"Class Number(first character in the folder name)" : [images]}
         training_data = utils.read_data(path)
@@ -152,7 +262,11 @@ class EventHandlers:
             print(f"Training for class {key} length: {len(training_data[key])}")
         return 0
 
+    # ------------------------------------------
+    # ------------------------------------------
     # ---------- Hand Pose Classifier ----------
+    # ------------------------------------------
+    # ------------------------------------------
     def start_feed_hand_pose(self):
         # start camera feed
         return self.hand_pose_classifier.start_feed()
@@ -169,7 +283,7 @@ class EventHandlers:
         # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
         return self.hand_pose_classifier.preprocess_draw_landmarks(image)
 
-    def train_hand_pose(self, path):
+    def train_hand_pose(self, path: str) -> int:
         # training_data is map {"Class Number(first character in the folder name)" : [images]}
         print("Reading data...")
         training_data = utils.read_data(path)
@@ -203,3 +317,15 @@ class EventHandlers:
             return -1
         print(f"Predicted class: {pred}")
         return pred
+
+    # ------------------------------------------
+    # ------------------------------------------
+    # ------------ Image Classifier ------------
+    # ------------------------------------------
+    # ------------------------------------------
+
+    # ------------------------------------------
+    # ------------------------------------------
+    # ------------ Audio Classifier ------------
+    # ------------------------------------------
+    # ------------------------------------------
