@@ -62,21 +62,24 @@ class SocketServer:
         while True:
             # Receive message from the socket
             message_obj, addr = self.receive_message()
+            # Count the FPS
+            self._count_FPS()
 
             event = message_obj["event"]
 
             # Call the event handler
             handler_res = self.event_handlers.handle_event(event, message_obj)
-
-            # Count the FPS
-            self._count_FPS()
-
             # Save the image
             # cv2.imwrite(
             #     os.path.join("frames_test", f"frame_{time.time()}.png"), processed_image
             # )
             # Send a message back to the client
-            res_message = self.build_response_message(event, handler_res)
+
+            res_message = self.event_handlers.build_response_message(
+                event,
+                str(self.FPS),
+                handler_res,
+            )
             self.respond(res_message, addr)
 
     # def _send_camera_feed_hand_pose(self, addr):
@@ -97,23 +100,6 @@ class SocketServer:
             self.FPS_previous_time = time.time()
             self.FPS = self.FPS_count
             self.FPS_count = 0
-
-    def build_response_message(self, event, message) -> Dict[str, str]:
-        response = {"event": event, "FPS": str(self.FPS)}
-        # --------------- General ------------------
-        if event == "predict_frame":
-            response["prediction"] = message
-        # --------------- Hand Pose ------------------
-        elif event == "start_body_pose_train":
-            response["message"] = message
-        elif event == "preprocess_hand_pose":
-            response["preprocessed_image"] = message
-        elif event == "get_feed_frame_handpose":
-            response["frame"] = message
-        else:
-            print(f"Event '{event}' not found in build_response_message")
-            response["message"] = message
-        return response
 
     def respond(self, response: Dict[str, str], addr):
         try:

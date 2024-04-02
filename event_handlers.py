@@ -1,3 +1,4 @@
+from typing import Any, Dict
 import utils
 import time
 
@@ -113,6 +114,28 @@ class EventHandlers:
         else:
             print(f"Event '{event}' not found")
         return res
+
+    def build_response_message(
+        self,
+        event: str,
+        fps: str,
+        message: Any,
+    ) -> Dict[str, str]:
+        response = {"event": event, "FPS": fps}
+        # --------------- General ------------------
+        if event == "predict_frame":
+            response["prediction"] = message
+        # --------------- Hand Pose ------------------
+        elif event == "start_body_pose_train":
+            response["message"] = message
+        elif event == "preprocess_hand_pose":
+            response["preprocessed_image"] = message
+        elif event == "get_feed_frame_handpose":
+            response["frame"] = message
+        else:
+            print(f"Event '{event}' not found in build_response_message")
+            response["message"] = message
+        return response
 
     # ------- Event handlers -------
 
