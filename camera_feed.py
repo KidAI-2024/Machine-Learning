@@ -12,19 +12,19 @@ class CameraFeed:
 
     def start_feed(self):
         """Start the camera feed"""
-        try:
-            print("Starting webcam feed...")
-            self.is_running = True
-            if self.cap is None:
+        while True:
+            try:
+                print("Starting webcam feed...")
+                self.is_running = True
                 self.cap = cv2.VideoCapture(0)
                 self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
                 self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 180)
-            self.thread = threading.Thread(target=self._capture_frames)
-            self.thread.start()
-            return 0
-        except Exception as e:
-            print(f"Error starting webcam feed: {e}")
-            return -1
+                self.thread = threading.Thread(target=self._capture_frames)
+                self.thread.start()
+                return 0
+            except Exception as e:
+                print(f"Error starting webcam feed: {e}")
+                continue
 
     def _capture_frames(self):
         """Internal method to continuously capture frames"""
@@ -33,7 +33,7 @@ class CameraFeed:
             ret, frame = self.cap.read()
             if not ret:
                 print("Error: Couldn't capture frame from webcam.")
-                break
+                continue
             with self.frame_lock:
                 self.latest_frame = frame
 
