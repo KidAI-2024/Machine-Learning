@@ -1,14 +1,17 @@
 import time
 from typing import Dict
-import numpy as np
-import cv2
-import base64
 import socket
 import json
+from event_handlers import EventHandlers
 
 
 class SocketServer:
-    def __init__(self, host, port, event_handlers):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        event_handlers: EventHandlers,
+    ):
         self.CHUNK_SIZE = 60000
         self.host = host
         self.port = port
@@ -110,7 +113,7 @@ class SocketServer:
             print(f"Error in socket_server::respond: {e}")
             return
 
-    def _respond_in_chunks(self, response_bytes, addr):
+    def _respond_in_chunks(self, response_bytes: bytes, addr):
         # split the response into chunks of size self.CHUNK_SIZE
         if len(response_bytes) < self.CHUNK_SIZE:
             self.socket.sendto(response_bytes, addr)
@@ -125,7 +128,7 @@ class SocketServer:
                 ]
                 self.socket.sendto(last_chunk, addr)
 
-    def _respond_complete_message(self, response_bytes, addr):
+    def _respond_complete_message(self, response_bytes: bytes, addr):
         try:
             self.socket.sendto(response_bytes, addr)
         except:
