@@ -143,14 +143,10 @@ class SocketServer:
             #     os.path.join("frames_test", f"frame_{time.time()}.png"), processed_image
             # )
             # Send a message back to the client
-
-            res_message = self.event_handlers.build_response_message(
-                event,
-                str(self.FPS),
-                handler_res,
-            )
-            # self.send_queue.append((res_message, addr))
-            self.respond(res_message, addr)
+            if handler_res is not None:
+                handler_res["FPS"] = str(self.FPS)
+                # self.send_queue.append((res_message, addr))
+                self.respond(handler_res, addr)
 
     # def _send_camera_feed_hand_pose(self, addr):
     #     # Get a frame from the camera feed
