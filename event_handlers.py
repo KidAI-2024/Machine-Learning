@@ -1,14 +1,12 @@
 from typing import Any, Dict, Union
-from hand_pose_handlers import *
-from general_handlers import *
-from body_pose_handlers import *
+from handlers.hand_pose_handlers import *
+from handlers.general_handlers import *
+from handlers.body_pose_handlers import *
 from decorators import events
 from server_utils import Req, Res
 
 
 class EventHandlers:
-    def __init__(self):
-        print("Initializing EventHandlers")
 
     def handle_event(
         self, event: str, message_obj: Dict[str, Any]
