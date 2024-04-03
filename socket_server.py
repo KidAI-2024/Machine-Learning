@@ -3,6 +3,7 @@ from typing import Dict
 import socket
 import json
 from event_handlers import EventHandlers
+import threading
 
 
 class SocketServer:
@@ -43,6 +44,12 @@ class SocketServer:
         snd_buffer_size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
         print(f"Current send buffer size: {snd_buffer_size} bytes")
         # self.event_handlers = event_handlers
+        self.send_queue = []
+        # Managing threads
+        self.receive_lock = threading.Lock()
+        self.send_lock = threading.Lock()
+        self.receive_threads = []
+        self.send_threads = []
 
     def receive_message(self):
         """Receives a message from a UDP socket and returns it as a dictionary and the address of the sender."""
@@ -80,17 +87,52 @@ class SocketServer:
         return message_bytes, addr
 
     def start(self):
+        num_threads = 5
+        # Start the receiving threads
+        # self._start_receive_threads(num_threads)
+        # Start the sending threads
+        # self._start_send_threads(num_threads)
+        # Start receiving
+        self._start_receiving()
+        # Start sending
+        # self._start_sending()
+        while True:
+            pass
+
+    def _start_send_threads(self, num_threads: int):
+        for _ in range(num_threads):
+            send_thread = threading.Thread(target=self._start_sending)
+            self.send_threads.append(send_thread)
+            send_thread.start()
+
+    def _start_receive_threads(self, num_threads: int):
+        for _ in range(num_threads):
+            receive_thread = threading.Thread(target=self._start_receiving)
+            self.receive_threads.append(receive_thread)
+            receive_thread.start()
+
+    def _start_sending(self):
+        while True:
+            with self.send_lock:
+                # pop the message from send_queue
+                if len(self.send_queue) > 0:
+                    message = self.send_queue.pop(0)
+                    # send the message
+                    self.respond(message[0], message[1])
+
+    def _start_receiving(self):
 
         while True:
             # Receive message from the socket
-            try:
-                message_obj, addr = self.receive_message()
-            except socket.error as e:
-                continue
-            except Exception as e:
-                continue
-            # Count the FPS
-            self._count_FPS()
+            with self.receive_lock:
+                try:
+                    message_obj, addr = self.receive_message()
+                except socket.error as e:
+                    continue
+                except Exception as e:
+                    continue
+                # Count the FPS
+                self._count_FPS()
 
             event = message_obj["event"]
 
@@ -107,6 +149,7 @@ class SocketServer:
                 str(self.FPS),
                 handler_res,
             )
+            # self.send_queue.append((res_message, addr))
             self.respond(res_message, addr)
 
     # def _send_camera_feed_hand_pose(self, addr):
