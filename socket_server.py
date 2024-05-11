@@ -59,15 +59,9 @@ class SocketServer:
         self.send_threads = []
 
     def start(self):
-        num_threads = 1
-        # Start the receiving threads
-        # self._start_receive_threads(num_threads)
-        # Start the sending threads
-        # self._start_send_threads(num_threads)
-        # Start receiving
-        # self._start_receiving()
-        # Start sending
-        # self._start_sending()
+        # =====================================
+        # ===========Single-threaded===========
+        # =====================================
         while True:
             # ===============================================
             # ================Receive message================
@@ -77,6 +71,20 @@ class SocketServer:
             # ==================Send message=================
             # ===============================================
             self.send_one_message_from_queue()
+        # =====================================
+        # ===========Multi-threaded===========
+        # =====================================
+        # num_threads = 1
+        # Start the receiving threads
+        # self._start_receive_threads(num_threads)
+        # Start the sending threads
+        # self._start_send_threads(num_threads)
+        # Start receiving
+        # self._start_receiving()
+        # Start sending
+        # self._start_sending()
+        # while True:
+        #     pass
 
     # ============================================================================
     # ============================================================================
@@ -101,6 +109,7 @@ class SocketServer:
         """Receives a message from a UDP socket and returns it as a dictionary and the address of the sender."""
         # Initialize the image data
         message_bytes, addr = self._receive_message_in_chunks()
+        # message_bytes, addr = self._receive_complete_message()
         if message_bytes is None:
             return None, None
         # Convert bytes to json
