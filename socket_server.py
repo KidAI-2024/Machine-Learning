@@ -12,12 +12,12 @@ class SocketServer:
         self,
         host: str,
         port: int,
-        event_handlers: EventHandlers,
     ):
         self.CHUNK_SIZE = 60 * 1024
         self.host = host
         self.port = port
-        self.event_handlers = event_handlers
+        self.event_handlers = EventHandlers(self.respond)
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # make the socket non blocking
         self.socket.setblocking(False)
@@ -96,7 +96,7 @@ class SocketServer:
         if message_obj is not None:
             event = message_obj["event"]
             # Call the event handler
-            handler_res = self.event_handlers.handle_event(event, message_obj)
+            handler_res = self.event_handlers.handle_event(event, message_obj, addr)
             # Send a message back to the client
             if handler_res is not None:
                 handler_res["FPS"] = str(self.FPS)
