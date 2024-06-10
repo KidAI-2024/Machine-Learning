@@ -8,13 +8,14 @@ import os
 class BodyPoseUtils:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.3, model_complexity=2)
+        self.pose = self.mp_pose.Pose()
         self.mp_drawing = mp.solutions.drawing_utils 
 
     def get_body_landmarks(self, image):
         """Get body landmarks from a single image."""
         # Convert the BGR image to RGB and process it with MediaPipe Body.
         try:
+            
             results = self.pose.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
             return results.pose_landmarks
         except Exception as e:
