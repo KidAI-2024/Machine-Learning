@@ -12,7 +12,6 @@ args = parser.parse_args()
 
 
 if __name__ == "__main__":
-    event_handlers = EventHandlers()
     print("Starting the Socket Server")
-    socket_server = SocketServer("localhost", args.port, event_handlers)
+    socket_server = SocketServer("localhost", args.port)
     socket_server.start()

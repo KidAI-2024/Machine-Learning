@@ -58,6 +58,7 @@ def preprocess_hand_pose(req: Req, res: Res):
     preprocess_image_str = utils.image_to_b64string(preprocess_image)
     res_msg = {"preprocessed_image": preprocess_image_str}
     return res.build(req.event, res_msg)
+    # res.send(req.event, res_msg)
 
 
 @event("train_hand_pose")
