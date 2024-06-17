@@ -2,6 +2,7 @@ from BodyPoseClassifier.body_pose_classifier import BodyPoseClassifier
 import utils
 from decorators import event
 from server_utils import Req, Res
+import os
 
 
 body_pose_classifier = BodyPoseClassifier()
@@ -50,17 +51,16 @@ def preprocess_body_pose(req: Req, res: Res):
     except ValueError:
         height = 180
         print(f"Invalid height: {height_str}")
-    print(f"frame: {frame_bytes}")
     # Convert the bytes to an image
-    # image = utils.b64string_to_image(frame_bytes, (height, width, 3))
+    image = utils.b64string_to_image(frame_bytes, (height, width, 3))
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
-    # preprocess_image = body_pose_classifier.preprocess_draw_landmarks(image)
-    # preprocess_image_str = utils.image_to_b64string(preprocess_image)
-    res_msg = {"preprocessed_image": "gamed yala"}
+    preprocess_image = body_pose_classifier.preprocess_draw_landmarks(image)
+    preprocess_image_str = utils.image_to_b64string(preprocess_image)
+    res_msg = {"preprocessed_image": preprocess_image_str}
     return res.build(req.event, res_msg)
 
 
-@event("train_body_pose")
+@event("start_body_pose_train")
 def train_body_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
@@ -79,11 +79,28 @@ def train_body_pose(req: Req, res: Res) -> int:
         print(f"Error in train: {e}")
         return -1
     print("Saving model...")
-    model_path = "./body_pose_model.pkl"
+    project_name = path.split("/")[-1]
+    saved_model_name = "body_pose_model.pkl"
+    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name) # Currect directory is Machine-Learning
     body_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
-    return None
+    res_msg = {"status": "success", "saved_model_name": saved_model_name}
+    return res.build(req.event, res_msg)
+
+@event("load_body_pose_model")
+def load_body_pose_model(req: Req, res: Res) -> int:
+    project_name = req.msg["project_name"]
+    saved_model_name = req.msg["saved_model_name"]
+    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name)
+    try:
+        body_pose_classifier.load(model_path)
+        print(f"Model loaded from {model_path}")
+        res_msg = {"status": "success"}
+    except Exception as e:
+        res_msg = {"status": "Model file not found"}
+    
+    return res.build(req.event, res_msg)
 
 @event("predict_body_pose")
 def predict_body_pose(req: Req, res: Res):
@@ -110,7 +127,7 @@ def predict_body_pose(req: Req, res: Res):
     except Exception as e:
         print(f"Error in predict: {e}")
         return -1
-    print(f"Predicted class: {pred}")
+    # print(f"Predicted class: {pred}")
 
     res_msg = {"prediction": pred}
     return res.build(req.event, res_msg)
