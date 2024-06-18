@@ -111,7 +111,7 @@ def predict_hand_pose(req: Req, res: Res):
         pred = hand_pose_classifier.predict(image)
     except Exception as e:
         print(f"Error in predict: {e}")
-        return -1
+        pred = -1
     print(f"Predicted class: {pred}")
 
     res_msg = {"prediction": pred}
