@@ -2,6 +2,7 @@ from BodyPoseClassifier.body_pose_classifier import BodyPoseClassifier
 import utils
 from decorators import event
 from server_utils import Req, Res
+import os
 
 
 body_pose_classifier = BodyPoseClassifier()
@@ -59,8 +60,8 @@ def preprocess_body_pose(req: Req, res: Res):
     return res.build(req.event, res_msg)
 
 
-@event("train_hand_pose")
-def train_hand_pose(req: Req, res: Res) -> int:
+@event("start_body_pose_train")
+def train_body_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     print("Reading data...")
@@ -78,8 +79,55 @@ def train_hand_pose(req: Req, res: Res) -> int:
         print(f"Error in train: {e}")
         return -1
     print("Saving model...")
-    model_path = "./body_pose_model.pkl"
+    project_name = path.split("/")[-1]
+    saved_model_name = "body_pose_model.pkl"
+    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name) # Currect directory is Machine-Learning
     body_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
-    return None
+    res_msg = {"status": "success", "saved_model_name": saved_model_name}
+    return res.build(req.event, res_msg)
+
+@event("load_body_pose_model")
+def load_body_pose_model(req: Req, res: Res) -> int:
+    project_name = req.msg["project_name"]
+    saved_model_name = req.msg["saved_model_name"]
+    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name)
+    try:
+        body_pose_classifier.load(model_path)
+        print(f"Model loaded from {model_path}")
+        res_msg = {"status": "success"}
+    except Exception as e:
+        res_msg = {"status": "Model file not found"}
+    
+    return res.build(req.event, res_msg)
+
+@event("predict_body_pose")
+def predict_body_pose(req: Req, res: Res):
+    frame_bytes = req.msg["frame"]
+    width_str = req.msg["width"]
+    height_str = req.msg["height"]
+    try:
+        width = int(width_str)
+    except ValueError:
+        width = 320
+        print(f"Invalid width: {width_str}")
+    try:
+        height = int(height_str)
+    except ValueError:
+        height = 180
+        print(f"Invalid height: {height_str}")
+    # Convert the bytes to an image
+    image = utils.b64string_to_image(frame_bytes, (height, width, 3))
+    # preprocessed_img = body_pose_classifier.preprocess(image)
+    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
+    # body_pose_classifier.load("./body_pose_model.pkl")
+    try:
+        pred = body_pose_classifier.predict(image)
+    except Exception as e:
+        print(f"Error in predict: {e}")
+        return -1
+    # print(f"Predicted class: {pred}")
+
+    res_msg = {"prediction": pred}
+    return res.build(req.event, res_msg)

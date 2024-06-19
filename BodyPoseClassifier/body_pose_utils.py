@@ -8,7 +8,7 @@ import os
 class BodyPoseUtils:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.3, model_complexity=2)
+        self.pose = self.mp_pose.Pose()
         self.mp_drawing = mp.solutions.drawing_utils 
 
     def get_body_landmarks(self, image):
@@ -107,14 +107,18 @@ class BodyPoseUtils:
             return None, None
 
 
-    def angle_between_three_points(self, p1, p2, p3):
-        '''Calculate the angle between three points.'''
-        vector1 = p1 - p2
-        vector2 = p3 - p2
-        dot_product = np.dot(vector1, vector2)
-        norm_product = np.linalg.norm(vector1) * np.linalg.norm(vector2)
-        angle_rad = np.arccos(dot_product / norm_product)
-        return np.degrees(angle_rad)   
+    def angle_between_three_points(self, pointA, pointB, pointC):
+        # Vectors AB and BC
+        AB = np.array([pointA.x - pointB.x, pointA.y - pointB.y, pointA.z - pointB.z])
+        BC = np.array([pointC.x - pointB.x, pointC.y - pointB.y, pointC.z - pointB.z])
+        # Normalize vectors
+        AB_normalized = AB / np.linalg.norm(AB)
+        BC_normalized = BC / np.linalg.norm(BC)
+        # Calculate the dot product
+        dot_product = np.dot(AB_normalized, BC_normalized)
+        # Calculate the angle in radians and then convert to degrees
+        angle = np.arccos(dot_product)
+        return np.degrees(angle)
 
     
     def calculate_symmetry_score(self, landmarks):
@@ -133,31 +137,50 @@ class BodyPoseUtils:
                         self.mp_pose.PoseLandmark.RIGHT_KNEE.value,
                         self.mp_pose.PoseLandmark.RIGHT_ANKLE.value]
 
-        left_landmarks = np.array([landmarks[i] for i in left_indices])
-        right_landmarks = np.array([landmarks[i] for i in right_indices])
-        avg_distance = np.mean(np.linalg.norm(left_landmarks - right_landmarks, axis=1))
-        max_distance = np.max(np.linalg.norm(left_landmarks - right_landmarks, axis=1))
-        return avg_distance / max_distance 
+        left_landmarks = np.array([[landmarks[i].x, landmarks[i].y, landmarks[i].z] for i in left_indices])
+        right_landmarks = np.array([[landmarks[i].x, landmarks[i].y, landmarks[i].z] for i in right_indices])
+        
+        # Calculate distances between corresponding left and right landmarks
+        distances = np.linalg.norm(left_landmarks - right_landmarks, axis=1)
+        avg_distance = np.mean(distances)
+        max_distance = np.max(distances)
+        
+        # Symmetry score
+        symmetry_score = avg_distance / max_distance if max_distance != 0 else 0
+        
+        return symmetry_score
+
+    
+    def calculate_distance(self, point1, point2):
+        return np.linalg.norm(np.array([point1.x, point1.y, point1.z]) - np.array([point2.x, point2.y, point2.z]))
     
     def extract_features(self, image):
         """Extract hand pose features from a single image."""
         # Get hand landmarks.
-        landmarks = self.get_body_landmarks(image)
-        l_dist_shoulder_to_elbow = np.linalg.norm(landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value])
-        l_dist_elbow_to_wrist = np.linalg.norm(landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value] - landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value])
-        l_dist_shoulder_to_wrist = np.linalg.norm(landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value] - landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value])
-        # right
-        r_dist_shoulder_to_elbow = np.linalg.norm(landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER.value] - landmarks[self.mp_pose.PoseLandmark.RIGHT_ELBOW.value])
-        r_dist_elbow_to_wrist = np.linalg.norm(landmarks[self.mp_pose.PoseLandmark.RIGHT_ELBOW.value] - landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST.value])
-        r_dist_shoulder_to_wrist = np.linalg.norm(landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER.value] - landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST.value])
+        landmarks = self.get_body_landmarks(image).landmark
+        # Key points
+        l_shoulder = landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value]
+        l_elbow = landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value]
+        l_wrist = landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value]
+        r_shoulder = landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+        r_elbow = landmarks[self.mp_pose.PoseLandmark.RIGHT_ELBOW.value]
+        r_wrist = landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST.value]
+        l_hip = landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value]
+        r_hip = landmarks[self.mp_pose.PoseLandmark.RIGHT_HIP.value]
+
+        # Calculate distances
+        l_dist_shoulder_to_elbow = self.calculate_distance(l_shoulder, l_elbow)
+        l_dist_elbow_to_wrist = self.calculate_distance(l_elbow, l_wrist)
+        l_dist_shoulder_to_wrist = self.calculate_distance(l_shoulder, l_wrist)
+        r_dist_shoulder_to_elbow = self.calculate_distance(r_shoulder, r_elbow)
+        r_dist_elbow_to_wrist = self.calculate_distance(r_elbow, r_wrist)
+        r_dist_shoulder_to_wrist = self.calculate_distance(r_shoulder, r_wrist)
 
         # Calculate angles between specific landmarks
-        # left 
-        l_angle_shoulder_elbow_wrist = self.angle_between_three_points(landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value], landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value], landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value])
-        l_angle_eblow_shoulder_hip = self.angle_between_three_points(landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value], landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value], landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value])
-        # right
-        r_angle_shoulder_elbow_wrist = self.angle_between_three_points(landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER.value], landmarks[self.mp_pose.PoseLandmark.RIGHT_ELBOW.value], landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST.value])
-        r_angle_eblow_shoulder_hip = self.angle_between_three_points(landmarks[self.mp_pose.PoseLandmark.RIGHT_ELBOW.value], landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER.value], landmarks[self.mp_pose.PoseLandmark.RIGHT_HIP.value])
+        l_angle_shoulder_elbow_wrist = self.angle_between_three_points(l_shoulder, l_elbow, l_wrist)
+        l_angle_elbow_shoulder_hip = self.angle_between_three_points(l_elbow, l_shoulder, l_hip)
+        r_angle_shoulder_elbow_wrist = self.angle_between_three_points(r_shoulder, r_elbow, r_wrist)
+        r_angle_elbow_shoulder_hip = self.angle_between_three_points(r_elbow, r_shoulder, r_hip)
         
         # Calculate symmetry
         symmetry_score = self.calculate_symmetry_score(landmarks)
@@ -165,13 +188,13 @@ class BodyPoseUtils:
         # Concatenate all features into one array.
         features = np.array(
             [
-                l_angle_eblow_shoulder_hip, 
+                l_angle_elbow_shoulder_hip, 
                 l_angle_shoulder_elbow_wrist, 
                 l_dist_shoulder_to_elbow, 
                 l_dist_elbow_to_wrist, 
                 l_dist_shoulder_to_wrist, 
                 r_angle_shoulder_elbow_wrist, 
-                r_angle_eblow_shoulder_hip, 
+                r_angle_elbow_shoulder_hip, 
                 r_dist_shoulder_to_elbow, 
                 r_dist_elbow_to_wrist, 
                 r_dist_shoulder_to_wrist, 
