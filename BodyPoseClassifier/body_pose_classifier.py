@@ -68,7 +68,8 @@ class BodyPoseClassifier:
 
     def save(self, path):
         """Save the model to disk"""
-        pickle.dump(self.model, open(path, "wb"))
+        with open(path, "wb") as f:
+            pickle.dump(self.model, f)
 
     def load(self, path):
         """Load the model from disk"""
