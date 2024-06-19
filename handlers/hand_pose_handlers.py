@@ -2,6 +2,7 @@ from HandPoseClassifier.hand_pose_classifier import HandPoseClassifier
 import utils
 from decorators import event
 from server_utils import Req, Res
+import os
 
 hand_pose_classifier = HandPoseClassifier()
 
@@ -72,19 +73,26 @@ def train_hand_pose(req: Req, res: Res) -> int:
         features_map = hand_pose_classifier.preprocess(training_data)
     except Exception as e:
         print(f"Error in preprocess: {e}")
-        return -1
+        res_msg = {"status": "failed"}
+        return res.build(req.event, res_msg)
     print("Training...")
     try:
         hand_pose_classifier.train(features_map)
     except Exception as e:
         print(f"Error in train: {e}")
-        return -1
+        res_msg = {"status": "failed"}
+        return res.build(req.event, res_msg)
     print("Saving model...")
-    model_path = "./hand_pose_model.pkl"
+    project_name = path.split("/")[-1]
+    saved_model_name = "hand_pose_model.pkl"
+    model_path = os.path.join(
+        "..", "Engine", "Projects", project_name, saved_model_name
+    )  # Currect directory is Machine-Learning
     hand_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
-    return None
+    res_msg = {"status": "success", "saved_model_name": saved_model_name}
+    return res.build(req.event, res_msg)
 
 
 @event("predict_hand_pose")
