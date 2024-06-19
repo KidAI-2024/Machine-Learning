@@ -124,3 +124,20 @@ def predict_hand_pose(req: Req, res: Res):
 
     res_msg = {"prediction": pred}
     return res.build(req.event, res_msg)
+
+
+@event("load_hand_pose_model")
+def load_hand_pose_model(req: Req, res: Res) -> int:
+    project_name = req.msg["project_name"]
+    saved_model_name = req.msg["saved_model_name"]
+    model_path = os.path.join(
+        "..", "Engine", "Projects", project_name, saved_model_name
+    )
+    try:
+        hand_pose_classifier.load(model_path)
+        print(f"Model loaded from {model_path}")
+        res_msg = {"status": "success"}
+    except Exception as e:
+        res_msg = {"status": "Model file not found"}
+
+    return res.build(req.event, res_msg)
