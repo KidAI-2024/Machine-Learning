@@ -63,11 +63,16 @@ def preprocess_body_pose(req: Req, res: Res):
 @event("start_body_pose_train")
 def train_body_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
+    model = req.msg["model"]
+    feature_extraction_type = req.msg["feature_extraction_type"]
+    selected_features = req.msg["features"].split(",")
+    body_pose_classifier.selected_features = selected_features
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     print("Reading data...")
     training_data = utils.read_data(path)
     print("Extracting features...")
     try:
+        # body_pose_classifier.SelectModel(model)
         features_map = body_pose_classifier.preprocess(training_data)
     except Exception as e:
         print(f"Error in preprocess: {e}")
@@ -84,8 +89,9 @@ def train_body_pose(req: Req, res: Res) -> int:
     model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name) # Currect directory is Machine-Learning
     body_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
+    feature_importance_graph = body_pose_classifier.feature_importance_graph()
+    res_msg = {"status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph}
     print("Training completed successfully!")
-    res_msg = {"status": "success", "saved_model_name": saved_model_name}
     return res.build(req.event, res_msg)
 
 @event("load_body_pose_model")
