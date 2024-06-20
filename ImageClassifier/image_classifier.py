@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.svm import SVC
 import pickle
 
+
 class ImageClassifier:
     def __init__(self):
         self.model = SVC(kernel="linear")
@@ -16,6 +17,7 @@ class ImageClassifier:
 
     def predict(self, data):
         pass
+
     def save(self, path):
         """Save the model to disk
         Args:
