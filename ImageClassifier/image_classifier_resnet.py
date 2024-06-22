@@ -1,4 +1,5 @@
 from image_classifier_utils import *
+from camera_feed import CameraFeed
 
 
 class ImageClassifierResNet:
@@ -15,9 +16,11 @@ class ImageClassifierResNet:
         """
         self.device = get_default_device()
         self.model = to_device(ResNet9(in_channels, num_classes), self.device)
+        self.camera = CameraFeed()
 
-    def read_and_preprocess(self, path):
+    def read_and_preprocess_train(self, path):
         """Preprocess the images
+        read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
             2.data augmentation (random horizontal flip, random rotation)
         Args:
@@ -36,11 +39,51 @@ class ImageClassifierResNet:
                 # tt.Normalize(*stats, inplace=True),
             ]
         )
-        valid_tfms = tt.Compose([tt.ToTensor()])
         # PyTorch datasets
         train_ds = ImageFolder(path + "/train", train_tfms)
-        # valid_ds = ImageFolder(path + "/test", valid_tfms)
         return train_ds
+
+    def read_and_preprocess_test(self, path):
+        """Preprocess the images
+        read the images from the path and preprocess them by applying the following transformations:\n
+            1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
+            2.data augmentation (random horizontal flip, random rotation)
+        Args:
+            images (_type_): _description_
+        """
+        valid_tfms = tt.Compose([tt.ToTensor()])
+        valid_ds = ImageFolder(path + "/test", valid_tfms)
+        return valid_ds
+
+    def get_data_loaders(
+        self, train_ds, valid_ds, batch_size=128, num_workers=4, pin_memory=True
+    ):
+        """Get the data loaders for the training and validation datasets
+
+        Args:
+            train_ds (Dataset): The training dataset
+            valid_ds (Dataset): The validation dataset
+            batch_size (int, optional): The batch size for the data loaders. Defaults to 128.
+            num_workers (int, optional): The number of workers for the data loaders. Defaults to 4.
+            pin_memory (bool, optional): Pin the memory for the data loaders. Defaults to True.
+        """
+        if train_ds is not None:
+            train_dl = DataLoader(
+                train_ds,
+                batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                pin_memory=pin_memory,
+            )
+        else:
+            train_dl = None
+        if valid_ds is not None:
+            valid_dl = DataLoader(
+                valid_ds, batch_size * 2, num_workers=num_workers, pin_memory=pin_memory
+            )
+        else:
+            valid_dl = None
+        return train_dl, valid_dl
 
     def train(
         self,
@@ -91,19 +134,54 @@ class ImageClassifierResNet:
         # plot learning rates and save it
         plot_lrs(self.history, save_path="../../Engine/renet_lr.png", save_flag=True)
 
-    def predict(self, data):
-        pass
+    def predict(self, img, train_ds):
+        """Predict the class of the image
+
+        Args:
+            img (_type_): _description_
+            train_ds (_type_): _description_
+
+        Returns:
+            ste: The class of the image
+        """
+        # Convert to a batch of 1
+        xb = to_device(img.unsqueeze(0), self.device)
+        # Get predictions from model
+        yb = self.model(xb)
+        # Pick index with highest probability
+        _, preds = torch.max(yb, dim=1)
+        # Retrieve the class label
+        return train_ds.classes[preds[0].item()]
 
     def save(self, path):
         """Save the model to disk
         Args:
             path (str): The path to save the model to
         """
-        pickle.dump(self.model, open(path, "wb"))
+        # pickle.dump(self.model, open(path, "wb"))
+        torch.save(self.model, path)
 
     def load(self, path):
         """Load the model from disk
         Args:
             path (str): The path to load the model from
         """
-        self.model = pickle.load(open(path, "rb"))
+        # self.model = pickle.load(open(path, "rb"))
+        self.model.load_state_dict(torch.load(path))
+        self.model = to_device(self.model, self.device)
+        self.model.eval()
+
+    def start_feed(self):
+        """Start the camera feed"""
+        return self.camera.start_feed()
+
+    def stop_feed(self):
+        """Stop the camera feed"""
+        return self.camera.stop_feed()
+
+    def get_frame(self):
+        """Get a frame from the camera feed"""
+        return self.camera.get_latest_frame()
+
+    def print_model(self):
+        print("Model")

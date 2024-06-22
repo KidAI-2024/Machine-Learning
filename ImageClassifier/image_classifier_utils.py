@@ -21,6 +21,10 @@ import numpy as np
 
 matplotlib.rcParams["figure.facecolor"] = "#ffffff"
 
+batch_size = 400
+random_seed = 42
+torch.manual_seed(random_seed)
+
 
 def get_default_device():
     """Pick GPU if available, else CPU"""
