@@ -65,8 +65,7 @@ def train_body_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
     model = req.msg["model"]
     feature_extraction_type = req.msg["feature_extraction_type"]
-    selected_features = req.msg["features"].split(",")
-    body_pose_classifier.selected_features = selected_features
+    body_pose_classifier.selected_features = req.msg["features"].split(",")
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     print("Reading data...")
     training_data = utils.read_data(path)
@@ -98,6 +97,9 @@ def train_body_pose(req: Req, res: Res) -> int:
 def load_body_pose_model(req: Req, res: Res) -> int:
     project_name = req.msg["project_name"]
     saved_model_name = req.msg["saved_model_name"]
+    model = req.msg["model"]
+    feature_extraction_type = req.msg["feature_extraction_type"]
+    body_pose_classifier.selected_features = req.msg["features"].split(",")
     model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name)
     try:
         body_pose_classifier.load(model_path)
