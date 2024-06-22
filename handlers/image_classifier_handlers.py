@@ -1,10 +1,10 @@
-from ImageClassifier.image_classifier import ImageClassifier
+from ImageClassifier.image_classifier_cnn import ImageClassifierCNN
 
 import utils
 from decorators import event
 from server_utils import Req, Res
 
-image_classifier = ImageClassifier()
+image_classifier = ImageClassifierCNN()
 
 
 @event("train_hand_pose")

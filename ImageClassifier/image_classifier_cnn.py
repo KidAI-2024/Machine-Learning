@@ -1,13 +1,16 @@
-from skimage.feature import hog
-import numpy as np
-
-from sklearn.svm import SVC
+import os
+import torch
+import torchvision
+import tarfile
+from torchvision.datasets.utils import download_url
+from torch.utils.data import random_split
 import pickle
+import os
 
 
-class ImageClassifier:
+class ImageClassifierCNN:
     def __init__(self):
-        self.model = SVC(kernel="linear")
+        pass
 
     def preprocess(self, images):
         pass
