@@ -10,6 +10,9 @@ image_classifier_resnet = None | ImageClassifierResNet
 NUM_WORKERS = int(os.cpu_count() / 2)
 BATCH_SIZE = 400
 
+train_ds = None
+valid_ds = None
+
 
 @event("start_feed_image_classifier")
 def start_feed_image_classifier(req: Req, res: Res):
@@ -70,11 +73,11 @@ def train_image_classifier(req: Req, res: Res) -> int:
     path = req.msg["path"]  # the path to the training data
     num_classes = req.msg["num_classes"]  # the number of classes
     epochs = req.msg["epochs"]  # the number of epochs
-    max_lr = req.msg["max_lr"]
-    grad_clip = req.msg["grad_clip"]
-    weight_decay = req.msg["weight_decay"]
-    opt_func = req.msg["opt_func"]
-    # TODO:trial
+    max_lr = req.msg["max_lr"]  # the maximum learning rate
+    # grad_clip = req.msg["grad_clip"]
+    # weight_decay = req.msg["weight_decay"]
+    # opt_func = req.msg["opt_func"]
+    # TODO: model trial
     image_classifier_resnet = ImageClassifierResNet(num_classes)
     try:
         print("Reading data...")
@@ -91,7 +94,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
             train_ds, valid_ds, BATCH_SIZE, NUM_WORKERS, True
         )
         image_classifier_resnet.train(
-            epochs, max_lr, grad_clip, weight_decay, opt_func, train_dl, valid_dl
+            epochs=epochs, max_lr=max_lr, train_dl=train_dl, valid_dl=valid_dl
         )
     except Exception as e:
         print(f"Error in train: {e}")
@@ -147,7 +150,7 @@ def predict_image_classifier(req: Req, res: Res):
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
     # image_classifier_classifier.load("./image_classifier_model.pkl")
     try:
-        pred = image_classifier_resnet.predict(image)
+        pred = image_classifier_resnet.predict(image, train_ds)
     except Exception as e:
         print(f"Error in predict: {e}")
         return -1
