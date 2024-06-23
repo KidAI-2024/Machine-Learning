@@ -1,13 +1,11 @@
-from ImageClassifier.image_classifier_cnn import ImageClassifierCNN
+# from ImageClassifier.image_classifier_cnn import ImageClassifierCNN
 from ImageClassifier.image_classifier_resnet import ImageClassifierResNet
 from utils import *
 from decorators import event
 from server_utils import Req, Res
 
-image_classifier_cnn = ImageClassifierCNN()
+# image_classifier_cnn = ImageClassifierCNN()
 image_classifier_resnet = None | ImageClassifierResNet
-
-image_classifier_resnet.print_model()
 
 NUM_WORKERS = int(os.cpu_count() / 2)
 BATCH_SIZE = 400

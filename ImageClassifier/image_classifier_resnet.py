@@ -1,4 +1,4 @@
-from image_classifier_utils import *
+from .image_classifier_utils import *
 from camera_feed import CameraFeed
 
 
