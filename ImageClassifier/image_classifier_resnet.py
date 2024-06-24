@@ -15,8 +15,17 @@ class ImageClassifierResNet:
             in_channels (int, optional): The number of input channels for the images. Defaults to 3.
         """
         self.device = get_default_device()
-        self.model = to_device(ResNet9(in_channels, num_classes), self.device)
+        self.model = None
+        self.num_classes = num_classes
+        self.in_channels = in_channels
+        # print("Device: ", self.device)
+        # print("num_classes: ", num_classes)
         self.camera = CameraFeed()
+
+    def create_model(self):
+        """Create the model"""
+        self.model = to_device(ResNet9(self.in_channels, self.num_classes), self.device)
+        return self.model
 
     def read_and_preprocess_train(self, path):
         """Preprocess the images
