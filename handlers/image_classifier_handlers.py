@@ -5,7 +5,7 @@ from decorators import event
 from server_utils import Req, Res
 
 # image_classifier_cnn = ImageClassifierCNN()
-image_classifier_resnet = None | ImageClassifierResNet
+image_classifier_resnet = ImageClassifierResNet()
 
 NUM_WORKERS = int(os.cpu_count() / 2)
 BATCH_SIZE = 400
@@ -74,12 +74,17 @@ def train_image_classifier(req: Req, res: Res) -> int:
     num_classes = req.msg["num_classes"]  # the number of classes
     epochs = req.msg["epochs"]  # the number of epochs
     max_lr = req.msg["max_lr"]  # the maximum learning rate
+    print(f"Training image classifier with {num_classes} classes")
+    # print(f"Path: {path}")
+    # print(f"Epochs: {epochs}")
+    # print(f"Max LR: {max_lr}")
+
     # grad_clip = req.msg["grad_clip"]
     # weight_decay = req.msg["weight_decay"]
     # opt_func = req.msg["opt_func"]
-    # TODO: model trial
-    image_classifier_resnet = ImageClassifierResNet(num_classes)
+    image_classifier_resnet.num_classes = num_classes
     try:
+        image_classifier_resnet.create_model()
         print("Reading data...")
         # training_data = read_data(path)
         train_ds = image_classifier_resnet.read_and_preprocess_train(path)
@@ -116,10 +121,12 @@ def train_image_classifier(req: Req, res: Res) -> int:
 def load_image_classifier_model(req: Req, res: Res) -> int:
     project_name = req.msg["project_name"]
     saved_model_name = req.msg["saved_model_name"]
+    num_classes = req.msg["num_classes"]
     model_path = os.path.join(
         "..", "Engine", "Projects", project_name, saved_model_name
     )
     try:
+        image_classifier_resnet = ImageClassifierResNet(num_classes)
         image_classifier_resnet.load(model_path)
         print(f"Model loaded from {model_path}")
         res_msg = {"status": "success"}
