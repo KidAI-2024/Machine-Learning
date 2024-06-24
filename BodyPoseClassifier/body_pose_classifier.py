@@ -67,7 +67,7 @@ class BodyPoseClassifier:
             plt.ylabel('Absolute Feature Importance')
             plt.title('Feature Importance in Linear SVM')
             plt.tight_layout()  # Adjusts the plot to ensure everything fits without overlapping
-            plt.show()
+            # plt.show()
             # Convert plot to bytes
             buf = io.BytesIO()
             plt.savefig(buf, format='png')

@@ -67,7 +67,7 @@ def train_body_pose(req: Req, res: Res) -> int:
     feature_extraction_type = req.msg["feature_extraction_type"]
     body_pose_classifier.selected_features = req.msg["features"].split(",")
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
-    print("Reading data...")
+    print("Reading data... from path: ", path)
     training_data = utils.read_data(path)
     print("Extracting features...")
     try:
@@ -85,7 +85,7 @@ def train_body_pose(req: Req, res: Res) -> int:
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "body_pose_model.pkl"
-    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name) # Currect directory is Machine-Learning
+    model_path = os.path.join(path, project_name, saved_model_name) # Currect directory is Machine-Learning
     body_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     feature_importance_graph = body_pose_classifier.feature_importance_graph()
@@ -95,12 +95,13 @@ def train_body_pose(req: Req, res: Res) -> int:
 
 @event("load_body_pose_model")
 def load_body_pose_model(req: Req, res: Res) -> int:
-    project_name = req.msg["project_name"]
+    path = req.msg["path"]
     saved_model_name = req.msg["saved_model_name"]
     model = req.msg["model"]
     feature_extraction_type = req.msg["feature_extraction_type"]
     body_pose_classifier.selected_features = req.msg["features"].split(",")
-    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name)
+    model_path = os.path.join(path, saved_model_name)
+    print(f"Loading model from {model_path}")
     try:
         body_pose_classifier.load(model_path)
         print(f"Model loaded from {model_path}")
