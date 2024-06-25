@@ -66,8 +66,11 @@ def accuracy(outputs, labels):
 class ImageClassificationBase(nn.Module):
     def training_step(self, batch):
         images, labels = batch
+        # print("get batch")
         out = self(images)  # Generate predictions
+        # print("get predictions")
         loss = F.cross_entropy(out, labels)  # Calculate loss
+        # print("get loss")
         return loss
 
     def validation_step(self, batch):
@@ -110,27 +113,55 @@ def conv_block(in_channels, out_channels, pool=False):
 class ResNet9(ImageClassificationBase):
     def __init__(self, in_channels, num_classes):
         super().__init__()
-
-        self.conv1 = conv_block(in_channels, 64)
-        self.conv2 = conv_block(64, 128, pool=True)
-        self.res1 = nn.Sequential(conv_block(128, 128), conv_block(128, 128))
-
-        self.conv3 = conv_block(128, 256, pool=True)
-        self.conv4 = conv_block(256, 512, pool=True)
-        self.res2 = nn.Sequential(conv_block(512, 512), conv_block(512, 512))
-
-        self.classifier = nn.Sequential(
-            nn.MaxPool2d(4), nn.Flatten(), nn.Dropout(0.2), nn.Linear(512, num_classes)
+        self.num_classes = num_classes
+        self.in_channels = in_channels
+        # print("resnet number of classes", num_classes)
+        # print("resnet in_channels", in_channels)
+        # for input 320*180*3
+        self.conv1 = conv_block(in_channels, 64)  # 320*180*64
+        self.conv2 = conv_block(64, 128, pool=True)  # 160*90*128
+        self.res1 = nn.Sequential(
+            conv_block(128, 128),  # 160*90*128
+            conv_block(128, 128),  # 160*90*128
         )
+        # print("ResNet9 model created 1")
+
+        self.conv3 = conv_block(128, 256, pool=True)  # 80*45*256
+        self.conv4 = conv_block(256, 512, pool=True)  # 40*22*512
+        self.res2 = nn.Sequential(
+            conv_block(512, 512),  # 40*22*512
+            conv_block(512, 512),  # 40*22*512
+        )
+        # print("ResNet9 model created 2")
+        self.classifier = nn.Sequential(
+            nn.MaxPool2d(4),  # 10*5*512
+            nn.Flatten(),  # 25600
+            nn.Dropout(0.2),  # 25600
+            nn.Linear(512, num_classes),
+            # nn.Linear(25600, num_classes),
+        )
+        print("ResNet9 model created 3")
 
     def forward(self, xb):
+        # print("xb", xb.shape)
         out = self.conv1(xb)
+        # print("conv1 out", out.shape)
         out = self.conv2(out)
+        # print("conv2 out", out.shape)
         out = self.res1(out) + out
+        # print("res1 out", out.shape)
         out = self.conv3(out)
+        # print("conv3 out", out.shape)
         out = self.conv4(out)
+        # print("conv4 out", out.shape)
         out = self.res2(out) + out
+        # print("res2 out", out.shape)
         out = self.classifier(out)
+        # print("classifier out", out.shape)
+        final_layer_dim = out.shape[1]
+        # print("final_layer_dim", final_layer_dim)
+        out = nn.Linear(final_layer_dim, self.num_classes)(out)
+        # print("out", out)
         return out
 
 
@@ -165,34 +196,38 @@ def fit_one_cycle(
     sched = torch.optim.lr_scheduler.OneCycleLR(
         optimizer, max_lr, epochs=epochs, steps_per_epoch=len(train_loader)
     )
-
     for epoch in range(epochs):
+        print(f"Epoch {epoch+1}")
         # Training Phase
         model.train()
         train_losses = []
         lrs = []
+        # print("Starting epoch")
         for batch in train_loader:
             loss = model.training_step(batch)
+            # print("training step")
             train_losses.append(loss)
             loss.backward()
-
+            # print("backward")
             # Gradient clipping
             if grad_clip:
                 nn.utils.clip_grad_value_(model.parameters(), grad_clip)
-
+            # print("clip grad")
             optimizer.step()
             optimizer.zero_grad()
-
+            # print("zero grad")
             # Record & update learning rate
             lrs.append(get_lr(optimizer))
             sched.step()
-
+            # print("step")
+        # print("train_losses", train_losses)
         # Validation phase
-        result = evaluate(model, val_loader)
-        result["train_loss"] = torch.stack(train_losses).mean().item()
-        result["lrs"] = lrs
-        model.epoch_end(epoch, result)
-        history.append(result)
+        if val_loader is not None:
+            result = evaluate(model, val_loader)
+            result["train_loss"] = torch.stack(train_losses).mean().item()
+            result["lrs"] = lrs
+            model.epoch_end(epoch, result)
+            history.append(result)
     return history
 
 

@@ -14,7 +14,8 @@ class ImageClassifierResNet:
             num_classes (int, optional): The number of classes you want predict. Defaults to 2.
             in_channels (int, optional): The number of input channels for the images. Defaults to 3.
         """
-        self.device = get_default_device()
+        # self.device = get_default_device()
+        self.device = torch.device("cpu")
         self.model = None
         self.num_classes = num_classes
         self.in_channels = in_channels
@@ -25,6 +26,7 @@ class ImageClassifierResNet:
     def create_model(self):
         """Create the model"""
         self.model = to_device(ResNet9(self.in_channels, self.num_classes), self.device)
+        print("model is created")
         return self.model
 
     def read_and_preprocess_train(self, path):
@@ -42,14 +44,15 @@ class ImageClassifierResNet:
                 tt.RandomCrop(32, padding=4, padding_mode="reflect"),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
-                tt.RandomResizedCrop(256, scale=(0.5, 0.9), ratio=(1, 1)),
+                # tt.RandomResizedCrop(256, scale=(0.5, 0.9), ratio=(1, 1)),
                 tt.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
                 tt.ToTensor(),
                 # tt.Normalize(*stats, inplace=True),
             ]
         )
         # PyTorch datasets
-        train_ds = ImageFolder(path + "/train", train_tfms)
+        train_ds = ImageFolder(path, train_tfms)
+        # train_ds = ImageFolder(path + "/train", train_tfms)
         return train_ds
 
     def read_and_preprocess_test(self, path):
@@ -96,6 +99,7 @@ class ImageClassifierResNet:
 
     def train(
         self,
+        project_path,
         epochs=10,
         max_lr=0.01,
         grad_clip=0.1,
@@ -121,7 +125,7 @@ class ImageClassifierResNet:
         self.weight_decay = weight_decay
         self.opt_func = opt_func
         # inital accuracy without training
-        self.history = [evaluate(self.model, valid_dl)]
+        self.history = [] if valid_dl is None else [evaluate(self.model, valid_dl)]
         self.history += fit_one_cycle(
             epochs,
             max_lr,
@@ -132,16 +136,25 @@ class ImageClassifierResNet:
             weight_decay=weight_decay,
             opt_func=opt_func,
         )
-        # plot the accuracies and save it
-        plot_accuracies(
-            self.history, save_path="../../Engine/renet_accuracy.png", save_flag=True
-        )
-        # plot losses and save it
-        plot_losses(
-            self.history, save_path="../../Engine/renet_loss.png", save_flag=True
-        )
-        # plot learning rates and save it
-        plot_lrs(self.history, save_path="../../Engine/renet_lr.png", save_flag=True)
+        if self.history != []:
+            # plot the accuracies and save it
+            plot_accuracies(
+                self.history,
+                save_path=f"{project_path}/renet_accuracy.png",
+                save_flag=True,
+            )
+            # plot losses and save it
+            plot_losses(
+                self.history,
+                save_path=f"{project_path}/renet_loss.png",
+                save_flag=True,
+            )
+            # plot learning rates and save it
+            plot_lrs(
+                self.history,
+                save_path=f"{project_path}/renet_lr.png",
+                save_flag=True,
+            )
 
     def predict(self, img, train_ds):
         """Predict the class of the image
@@ -167,18 +180,19 @@ class ImageClassifierResNet:
         Args:
             path (str): The path to save the model to
         """
-        # pickle.dump(self.model, open(path, "wb"))
-        torch.save(self.model, path)
+        torch.save(self.model.state_dict(), path)
 
     def load(self, path):
         """Load the model from disk
         Args:
             path (str): The path to load the model from
         """
-        # self.model = pickle.load(open(path, "rb"))
+        self.create_model()
+        print("start loading model")
         self.model.load_state_dict(torch.load(path))
         self.model = to_device(self.model, self.device)
         self.model.eval()
+        print("model loaded")
 
     def start_feed(self):
         """Start the camera feed"""

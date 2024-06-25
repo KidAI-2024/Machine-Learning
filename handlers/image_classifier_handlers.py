@@ -14,16 +14,16 @@ train_ds = None
 valid_ds = None
 
 
-@event("start_feed_image_classifier")
-def start_feed_image_classifier(req: Req, res: Res):
+@event("start_feed_hand_pose")
+def start_feed_hand_pose(req: Req, res: Res):
     # start camera feed
     status = image_classifier_resnet.start_feed()
     res_msg = {"message": "success" if status == 0 else "failed"}
     return res.build(req.event, res_msg)
 
 
-@event("stop_feed_image_classifier")
-def stop_feed_image_classifier(req: Req, res: Res):
+@event("stop_feed_hand_pose")
+def stop_feed_hand_pose(req: Req, res: Res):
     # stop camera feed
     status = image_classifier_resnet.stop_feed()
     res_msg = {"message": "success" if status == 0 else "failed"}
@@ -71,35 +71,44 @@ def get_feed_frame_image_classifier(req: Req, res: Res):
 @event("start_image_classifier_train")
 def train_image_classifier(req: Req, res: Res) -> int:
     path = req.msg["path"]  # the path to the training data
-    num_classes = req.msg["num_classes"]  # the number of classes
-    epochs = req.msg["epochs"]  # the number of epochs
-    max_lr = req.msg["max_lr"]  # the maximum learning rate
+    print(f"Training image classifier with data in {path}")
+    num_classes = int(req.msg["num_classes"])  # the number of classes
     print(f"Training image classifier with {num_classes} classes")
-    # print(f"Path: {path}")
-    # print(f"Epochs: {epochs}")
-    # print(f"Max LR: {max_lr}")
-
+    epochs = int(req.msg["epochs"])  # the number of epochs
+    print(f"Training image classifier for {epochs} epochs")
+    max_lr = float(req.msg["max_lr"])  # the maximum learning rate
+    print(f"Training image classifier with max learning rate {max_lr}")
     # grad_clip = req.msg["grad_clip"]
     # weight_decay = req.msg["weight_decay"]
     # opt_func = req.msg["opt_func"]
     image_classifier_resnet.num_classes = num_classes
+    print(
+        f"Training image classifier with {image_classifier_resnet.num_classes} classes"
+    )
     try:
+        print("Creating model...")
         image_classifier_resnet.create_model()
         print("Reading data...")
         # training_data = read_data(path)
-        train_ds = image_classifier_resnet.read_and_preprocess_train(path)
-        valid_ds = image_classifier_resnet.read_and_preprocess_test(path)
+        project_path = os.path.join("..", "Engine", path)
+        train_ds = image_classifier_resnet.read_and_preprocess_train(project_path)
+        # valid_ds = image_classifier_resnet.read_and_preprocess_test(path)
     except Exception as e:
         print(f"Error in preprocess: {e}")
         return -1
-    print("Training...")
     try:
+        print("Creating data loaders...")
         # PyTorch data loaders
         train_dl, valid_dl = image_classifier_resnet.get_data_loaders(
             train_ds, valid_ds, BATCH_SIZE, NUM_WORKERS, True
         )
+        print("Training...")
         image_classifier_resnet.train(
-            epochs=epochs, max_lr=max_lr, train_dl=train_dl, valid_dl=valid_dl
+            project_path,
+            epochs=epochs,
+            max_lr=max_lr,
+            train_dl=train_dl,
+            valid_dl=valid_dl,
         )
     except Exception as e:
         print(f"Error in train: {e}")
@@ -125,12 +134,16 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
     model_path = os.path.join(
         "..", "Engine", "Projects", project_name, saved_model_name
     )
+    print(f"Loading model from {model_path}")
+    print(f"Number of classes: {num_classes}")
+    print(f"project_name: {project_name}")
     try:
-        image_classifier_resnet = ImageClassifierResNet(num_classes)
+        image_classifier_resnet.num_classes = int(num_classes)
         image_classifier_resnet.load(model_path)
         print(f"Model loaded from {model_path}")
         res_msg = {"status": "success"}
     except Exception as e:
+        print(f"Error in load: {e}")
         res_msg = {"status": "Model file not found"}
 
     return res.build(req.event, res_msg)
