@@ -35,7 +35,7 @@ class ImageClassifierResNet:
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
             2.data augmentation (random horizontal flip, random rotation)
         Args:
-            images (_type_): _description_
+            images (ImageFolder): The images to preprocess
         """
 
         # Data transforms (data augmentation)
@@ -73,8 +73,8 @@ class ImageClassifierResNet:
         """Get the data loaders for the training and validation datasets
 
         Args:
-            train_ds (Dataset): The training dataset
-            valid_ds (Dataset): The validation dataset
+            train_ds (ImageFolder): The training dataset
+            valid_ds (ImageFolder): The validation dataset
             batch_size (int, optional): The batch size for the data loaders. Defaults to 128.
             num_workers (int, optional): The number of workers for the data loaders. Defaults to 4.
             pin_memory (bool, optional): Pin the memory for the data loaders. Defaults to True.
@@ -160,20 +160,17 @@ class ImageClassifierResNet:
         """Predict the class of the image
 
         Args:
-            img (_type_): _description_
-            train_ds (_type_): _description_
+            img (numpy.ndarray): The image to predict
+            train_ds (ImageFolder): The training dataset
 
         Returns:
             ste: The class of the image
         """
-        # Convert to a batch of 1
-        xb = to_device(img.unsqueeze(0), self.device)
-        # Get predictions from model
-        yb = self.model(xb)
-        # Pick index with highest probability
-        _, preds = torch.max(yb, dim=1)
-        # Retrieve the class label
-        return train_ds.classes[preds[0].item()]
+        # convert the numpy image to a tensor
+        img = torch.tensor(img)
+        print("img shape: ", img.shape)
+        # call predict_image function
+        return predict_image(img, self.model, self.device, train_ds)
 
     def save(self, path):
         """Save the model to disk

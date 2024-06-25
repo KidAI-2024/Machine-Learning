@@ -3,6 +3,7 @@ from ImageClassifier.image_classifier_resnet import ImageClassifierResNet
 from utils import *
 from decorators import event
 from server_utils import Req, Res
+import time
 
 # image_classifier_cnn = ImageClassifierCNN()
 image_classifier_resnet = ImageClassifierResNet()
@@ -134,6 +135,7 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
     model_path = os.path.join(
         "..", "Engine", "Projects", project_name, saved_model_name
     )
+    project_path = os.path.join("..", "Engine", "Projects", project_name)
     print(f"Loading model from {model_path}")
     print(f"Number of classes: {num_classes}")
     print(f"project_name: {project_name}")
@@ -141,6 +143,8 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
         image_classifier_resnet.num_classes = int(num_classes)
         image_classifier_resnet.load(model_path)
         print(f"Model loaded from {model_path}")
+        train_ds = image_classifier_resnet.read_and_preprocess_train(project_path)
+        print("Creating data loaders...")
         res_msg = {"status": "success"}
     except Exception as e:
         print(f"Error in load: {e}")
@@ -165,16 +169,15 @@ def predict_image_classifier(req: Req, res: Res):
         height = 180
         print(f"Invalid height: {height_str}")
     # Convert the bytes to an image
-    image = b64string_to_image(frame_bytes, (height, width, 3))
+    image = b64string_to_image_float(frame_bytes, (height, width, 3))
     # preprocessed_img = image_classifier_classifier.preprocess(image)
-    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
-    # image_classifier_classifier.load("./image_classifier_model.pkl")
+    cv2.imwrite(f"./frame_{time.time()}.png", image)
     try:
         pred = image_classifier_resnet.predict(image, train_ds)
     except Exception as e:
         print(f"Error in predict: {e}")
         return -1
-    # print(f"Predicted class: {pred}")
+    print(f"Predicted class: {pred}")
 
     res_msg = {"prediction": pred}
     return res.build(req.event, res_msg)

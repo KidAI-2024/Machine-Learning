@@ -117,30 +117,30 @@ class ResNet9(ImageClassificationBase):
         self.in_channels = in_channels
         # print("resnet number of classes", num_classes)
         # print("resnet in_channels", in_channels)
-        # for input 320*180*3
-        self.conv1 = conv_block(in_channels, 64)  # 320*180*64
-        self.conv2 = conv_block(64, 128, pool=True)  # 160*90*128
+        # for input 256*256*3
+        self.conv1 = conv_block(in_channels, 64)  # 256*256*64
+        self.conv2 = conv_block(64, 128, pool=True)  # 128*128*128
         self.res1 = nn.Sequential(
-            conv_block(128, 128),  # 160*90*128
-            conv_block(128, 128),  # 160*90*128
+            conv_block(128, 128),  # 128*128*128
+            conv_block(128, 128),  # 128*128*128
         )
         # print("ResNet9 model created 1")
 
-        self.conv3 = conv_block(128, 256, pool=True)  # 80*45*256
-        self.conv4 = conv_block(256, 512, pool=True)  # 40*22*512
+        self.conv3 = conv_block(128, 256, pool=True)  # 64*64*256
+        self.conv4 = conv_block(256, 512, pool=True)  # 32*32*512
         self.res2 = nn.Sequential(
-            conv_block(512, 512),  # 40*22*512
-            conv_block(512, 512),  # 40*22*512
+            conv_block(512, 512),  # 32*32*512
+            conv_block(512, 512),  # 32*32*512
         )
         # print("ResNet9 model created 2")
         self.classifier = nn.Sequential(
-            nn.MaxPool2d(4),  # 10*5*512
+            nn.MaxPool2d(4),  # 4*4*512
             nn.Flatten(),  # 25600
             nn.Dropout(0.2),  # 25600
-            nn.Linear(512, num_classes),
-            # nn.Linear(25600, num_classes),
+            # nn.Linear(512, num_classes), #for 32*32 img
+            nn.Linear(32768, num_classes),  # for 256*256 img
         )
-        print("ResNet9 model created 3")
+        # print("ResNet9 model created 3")
 
     def forward(self, xb):
         # print("xb", xb.shape)
@@ -158,9 +158,9 @@ class ResNet9(ImageClassificationBase):
         # print("res2 out", out.shape)
         out = self.classifier(out)
         # print("classifier out", out.shape)
-        final_layer_dim = out.shape[1]
+        # final_layer_dim = out.shape[1]
         # print("final_layer_dim", final_layer_dim)
-        out = nn.Linear(final_layer_dim, self.num_classes)(out)
+        # out = nn.Linear(final_layer_dim, self.num_classes)(out)
         # print("out", out)
         return out
 
@@ -293,20 +293,23 @@ def predict_image(img, model, device, train_ds):
     """Predict the class of the image
 
     Args:
-        img (_type_): The image to predict
-        model (_type_): The model to use for prediction
-        device (_type_): The device to use for prediction(CPU or GPU)
-        train_ds (_type_): The training dataset to get the classes from
+        img (tensor): The image to predict
+        model (ImageClassificationBase): The model to use for prediction
+        device (str): The device to use for prediction(CPU or GPU)
+        train_ds (ImageFolder): The training dataset to get the classes from
 
     Returns:
         str: The class of the image
     """
     # Convert to a batch of 1
     xb = to_device(img.unsqueeze(0), device)
+    print("input shape", xb.shape)
     # Get predictions from model
     yb = model(xb)
+    print("get predictions")
     # Pick index with highest probability
     _, preds = torch.max(yb, dim=1)
+    print("get preds")
     # Retrieve the class label
     return train_ds.classes[preds[0].item()]
 

@@ -41,6 +41,20 @@ def b64string_to_image(frame_bytes, shape):
     return image
 
 
+def b64string_to_image_float(frame_bytes, shape):
+    # Get the image data
+    image_data = base64.b64decode(frame_bytes)
+    color_array = np.frombuffer(image_data, dtype=np.uint8)
+    image = color_array.reshape(shape)
+    # Convert the image from BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # Flip the image vertically
+    image = cv2.flip(image, 0)
+    # Convert the image to float
+    image = image.astype(np.float32)
+    return image
+
+
 def image_to_b64string(image):
     # # Flip the image vertically
     # image = cv2.flip(image, 0)
