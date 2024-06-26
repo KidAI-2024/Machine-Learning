@@ -85,9 +85,7 @@ def train_hand_pose(req: Req, res: Res) -> int:
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "hand_pose_model.pkl"
-    model_path = os.path.join(
-        "..", "Engine", "Projects", project_name, saved_model_name
-    )  # Currect directory is Machine-Learning
+    model_path = os.path.join(path, project_name, saved_model_name)  # Currect directory is Machine-Learning
     hand_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
@@ -128,11 +126,9 @@ def predict_hand_pose(req: Req, res: Res):
 
 @event("load_hand_pose_model")
 def load_hand_pose_model(req: Req, res: Res) -> int:
-    project_name = req.msg["project_name"]
+    path = req.msg["path"]
     saved_model_name = req.msg["saved_model_name"]
-    model_path = os.path.join(
-        "..", "Engine", "Projects", project_name, saved_model_name
-    )
+    model_path = os.path.join(path, saved_model_name)
     try:
         hand_pose_classifier.load(model_path)
         print(f"Model loaded from {model_path}")
