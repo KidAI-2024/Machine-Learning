@@ -5,11 +5,30 @@ from pydub.generators import WhiteNoise
 from pydub import AudioSegment
 import soundfile as sf 
 import numpy as np
+
+  
+
 class AudioUtils:
     def __init__(self):
         self.count=0
-    
-    def convert_all_to_wav(self,root_directory):
+
+    def convert_to_wav(self, audio):
+        try:
+            # Convert audio to AudioSegment if not already
+            if not isinstance(audio, AudioSegment):
+                raise ValueError("Input must be an instance of pydub.AudioSegment")
+
+            # Convert to WAV format
+            wav_audio = audio.set_frame_rate(44100).set_channels(1)  # Adjust parameters as needed
+
+            return wav_audio
+
+        except Exception as e:
+            print(f"Error converting audio: {e}")
+            return None
+
+
+    def convert_all_to_wav(self, root_directory):
         for directory, _, filenames in os.walk(root_directory):
             for filename in filenames:
                 try:
@@ -18,14 +37,21 @@ class AudioUtils:
 
                     new_filename = os.path.splitext(filename)[0] + ".wav"
                     new_filepath = os.path.join(directory, new_filename)
+                    os.remove(filepath)
                     audio.export(new_filepath, format="wav")
+
+                    # Remove the old file after conversion
 
                 except Exception as e:
                     print(f"Error converting {filepath}: {e}")
 
     
-    def preprocess_all(self,root_directory, output_directory):
+    def preprocess_all(self, root_directory):
         try:
+            # Define the new output directory at the same level as the root directory
+            parent_directory = os.path.dirname(root_directory)
+            output_directory = os.path.join(parent_directory, os.path.basename(root_directory) + "_augmented")
+
             # Ensure the output directory exists
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
@@ -38,6 +64,14 @@ class AudioUtils:
 
                         # Load the audio file
                         y, sr = librosa.load(filepath)
+                        audio_segment = AudioSegment(
+                            y.tobytes(), 
+                            frame_rate=sr,
+                            sample_width=y.dtype.itemsize,
+                            channels=1  # librosa loads audio in mono
+                        )
+                        y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+                        y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
 
                         # Detect non-silent segments
                         non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed
@@ -80,11 +114,55 @@ class AudioUtils:
 
                     except Exception as e:
                         print(f"Error converting {filepath}: {e}")
-
+                    
+            return output_directory
         except Exception as e:
             print(f"Error processing directory {root_directory}: {e}")
+   
 
-        
+    def preprocess_audio(self, audio_segment: AudioSegment, sr=44100):
+        try:
+            # Convert AudioSegment to numpy array
+            y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+            y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
+
+            # Detect non-silent segments
+            non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed
+
+            # Find the effective 1 second segment
+            effective_duration = 1  # Desired duration in seconds
+            effective_samples = int(effective_duration * sr)  # Convert to number of samples
+
+            # Initialize variables to store the effective segment
+            effective_segment = np.array([], dtype=y.dtype)
+
+            # Extract non-silent segments until we reach 1 second
+            for start, end in non_silent_intervals:
+                segment = y[start:end]
+                effective_segment = np.concatenate((effective_segment, segment))
+                if len(effective_segment) >= effective_samples:
+                    effective_segment = effective_segment[:effective_samples]
+                    break
+
+            # If the effective segment is still less than 1 second, pad with silence
+            if len(effective_segment) < effective_samples:
+                padding = np.zeros(effective_samples - len(effective_segment), dtype=y.dtype)
+                effective_segment = np.concatenate((effective_segment, padding))
+
+            # Optionally, convert the numpy array back to an AudioSegment
+            # processed_audio_segment = AudioSegment(
+            #     (effective_segment * 32768).astype(np.int16).tobytes(),
+            #     frame_rate=sr,
+            #     sample_width=2,  # 16-bit audio has a sample width of 2 bytes
+            #     channels=1
+            # )
+
+            return effective_segment
+
+        except Exception as e:
+            print(f"Error processing audio: {e}")
+            return None
+
     def load_audio(self,file_path):
         return AudioSegment.from_file(file_path)
 
@@ -150,4 +228,39 @@ class AudioUtils:
                             file_path = os.path.join(root, file)
                             self.process_file(file_path)
                             # print(f"Processed: {file_path}")
+
+# def preprocess_audio(self, audio_data, sr=44100):
+        #     # try:
+        #         # Process the audio data
+        #         y = audio_data
+
+        #         # Detect non-silent segments
+        #         non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed
+
+        #         # Find the effective 1 second segment
+        #         effective_duration = 1  # Desired duration in seconds
+        #         effective_samples = int(effective_duration * sr)  # Convert to number of samples
+
+        #         # Initialize variables to store the effective segment
+        #         effective_segment = np.array([], dtype=y.dtype)
+
+        #         # Extract non-silent segments until we reach 1 second
+        #         for start, end in non_silent_intervals:
+        #             segment = y[start:end]
+        #             effective_segment = np.concatenate((effective_segment, segment))
+        #             if len(effective_segment) >= effective_samples:
+        #                 effective_segment = effective_segment[:effective_samples]
+        #                 break
+
+        #         # If the effective segment is still less than 1 second, pad with silence
+        #         if len(effective_segment) < effective_samples:
+        #             padding = np.zeros(effective_samples - len(effective_segment), dtype=y.dtype)
+        #             effective_segment = np.concatenate((effective_segment, padding))
+
+        #         return effective_segment
+
+    #     # except Exception as e:
+    #     #     print(f"Error processing audio: {e}")
+    #     #     return None
+    
 
