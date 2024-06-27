@@ -140,8 +140,8 @@ class ResNet9(ImageClassificationBase):
             nn.MaxPool2d(4),  # 4*4*512
             nn.Flatten(),  # 25600
             nn.Dropout(0.2),  # 25600
-            nn.Linear(512, num_classes),  # for 32*32 img
-            # nn.Linear(32768, num_classes),  # for 256*256 img
+            # nn.Linear(512, num_classes),  # for 32*32 img
+            nn.Linear(32768, num_classes),  # for 256*256 img
         )
         # print("ResNet9 model created 3")
 
