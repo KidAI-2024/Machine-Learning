@@ -170,14 +170,37 @@ def predict_image_classifier(req: Req, res: Res):
         print(f"Invalid height: {height_str}")
     # Convert the bytes to an image
     image = b64string_to_image_float(frame_bytes, (height, width, 3))
-    # preprocessed_img = image_classifier_classifier.preprocess(image)
-    cv2.imwrite(f"./frame_{time.time()}.png", image)
-    try:
-        pred = image_classifier_resnet.predict(image, train_ds)
-    except Exception as e:
-        print(f"Error in predict: {e}")
-        return -1
-    print(f"Predicted class: {pred}")
+    # ignore the image it was all black
+    if np.all(image == 0):
+        # print("Image is all black")
+        pred = -1
+    else:
+        # convert the image to tensor
+        img_tensor = torch.tensor(image)
+        # print("img shape: ", img_tensor.shape)
+        # Convert to shape [3, 320, 180]
+        converted_tensor = img_tensor.permute(2, 1, 0)
+        # print("converted_tensor shape: ", converted_tensor.shape)
+        # transformed_tensor = image_classifier_resnet.transform_v(converted_tensor)
+        transformed_tensor = torch.nn.functional.interpolate(
+            converted_tensor.unsqueeze(0),
+            size=(256, 256),  # or (32,32)
+            mode="bilinear",
+            align_corners=False,
+        )
+        transformed_tensor = transformed_tensor.squeeze(0)
+        # print("transformed_tensor shape: ", transformed_tensor.shape)
+        # img_tensor = ImageClassifierResNet.b64string_to_tensor(
+        #     frame_bytes, height, width, 3
+        # )
+        # image = b64string_to_image_float(frame_bytes, (height, width, 3))
+        # cv2.imwrite(f"./frame_{time.time()}.png", image)
+        try:
+            pred = image_classifier_resnet.predict(transformed_tensor, train_ds)
+        except Exception as e:
+            print(f"Error in predict: {e}")
+            return -1
+        print(f"Predicted class: {pred}")
 
     res_msg = {"prediction": pred}
     return res.build(req.event, res_msg)

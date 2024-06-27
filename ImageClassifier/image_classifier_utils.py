@@ -18,6 +18,9 @@ import pickle
 import os
 import cv2
 import numpy as np
+from PIL import Image
+import io
+import base64
 
 matplotlib.rcParams["figure.facecolor"] = "#ffffff"
 
@@ -137,8 +140,8 @@ class ResNet9(ImageClassificationBase):
             nn.MaxPool2d(4),  # 4*4*512
             nn.Flatten(),  # 25600
             nn.Dropout(0.2),  # 25600
-            # nn.Linear(512, num_classes), #for 32*32 img
-            nn.Linear(32768, num_classes),  # for 256*256 img
+            nn.Linear(512, num_classes),  # for 32*32 img
+            # nn.Linear(32768, num_classes),  # for 256*256 img
         )
         # print("ResNet9 model created 3")
 
@@ -303,15 +306,16 @@ def predict_image(img, model, device, train_ds):
     """
     # Convert to a batch of 1
     xb = to_device(img.unsqueeze(0), device)
-    print("input shape", xb.shape)
+    # print("input shape", xb.shape)
     # Get predictions from model
     yb = model(xb)
-    print("get predictions")
+    # print("get predictions")
     # Pick index with highest probability
     _, preds = torch.max(yb, dim=1)
-    print("get preds")
+    # print("get preds")
     # Retrieve the class label
-    return train_ds.classes[preds[0].item()]
+    # return train_ds.classes[preds[0].item()]
+    return preds[0].item()
 
 
 def calc_mean_std_of_each_channel(path, in_channels=3):
