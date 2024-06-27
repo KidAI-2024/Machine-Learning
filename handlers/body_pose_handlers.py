@@ -75,12 +75,14 @@ def train_body_pose(req: Req, res: Res) -> int:
         features_map = body_pose_classifier.preprocess(training_data)
     except Exception as e:
         print(f"Error in preprocess: {e}")
-        return -1
+        res_msg = {"status": "failed", "error": str(e)}
+        return res.build(req.event, res_msg)
     print("Training...")
     try:
         body_pose_classifier.train(features_map)
     except Exception as e:
-        print(f"Error in train: {e}")
+        res_msg = {"status": "failed", "error": str(e)}
+        return res.build(req.event, res_msg)
         return -1
     print("Saving model...")
     project_name = path.split("/")[-1]
@@ -107,7 +109,7 @@ def load_body_pose_model(req: Req, res: Res) -> int:
         print(f"Model loaded from {model_path}")
         res_msg = {"status": "success"}
     except Exception as e:
-        res_msg = {"status": "Model file not found"}
+        res_msg = {"status": "failed"}
     
     return res.build(req.event, res_msg)
 
