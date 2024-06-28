@@ -66,6 +66,9 @@ def train_body_pose(req: Req, res: Res) -> int:
     model = req.msg["model"]
     feature_extraction_type = req.msg["feature_extraction_type"]
     body_pose_classifier.selected_features = req.msg["features"].split(",")
+    if feature_extraction_type == "mediapipe" and body_pose_classifier.selected_features == [""]:
+        res_msg = {"status": "failed", "error": "Select Some Features to train the model"}
+        return res.build(req.event, res_msg)
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     print("Reading data... from path: ", path)
     training_data = utils.read_data(path)
@@ -75,15 +78,15 @@ def train_body_pose(req: Req, res: Res) -> int:
         features_map = body_pose_classifier.preprocess(training_data)
     except Exception as e:
         print(f"Error in preprocess: {e}")
-        res_msg = {"status": "failed", "error": str(e)}
+        res_msg = {"status": "failed", "error": "Training data contains invalid images"}
         return res.build(req.event, res_msg)
     print("Training...")
     try:
         body_pose_classifier.train(features_map)
     except Exception as e:
-        res_msg = {"status": "failed", "error": str(e)}
+        print(f"Error in train: {e}") 
+        res_msg = {"status": "failed", "error": "Error in Training no features detected"}
         return res.build(req.event, res_msg)
-        return -1
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "body_pose_model.pkl"
@@ -137,7 +140,7 @@ def predict_body_pose(req: Req, res: Res):
         pred = body_pose_classifier.predict(image)
     except Exception as e:
         print(f"Error in predict: {e}")
-        return -1
+        pred = "None"
     # print(f"Predicted class: {pred}")
 
     res_msg = {"prediction": pred}
