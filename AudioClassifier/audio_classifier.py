@@ -129,20 +129,8 @@ class AudioClassifier:
                 
                 # Check if the file is a .wav file
                 if file_path.endswith('.wav'):
-                    # try:
-                        # Load the audio file with librosa
-                        audio_data, sr = librosa.load(file_path, sr=None)
-                        
-                        # Convert audio data to AudioSegment
-                        # audio_segment = AudioSegment(audio_data.tobytes(), frame_rate=sr)
-                        audio_segment = AudioSegment(
-                            audio_data.tobytes(), 
-                            frame_rate=sr,
-                            sample_width=audio_data.dtype.itemsize,
-                            channels=1  # librosa loads audio in mono
-                        )
-                        # Predict class using your predict method (adjust as per your actual method)
-                        predicted_class_index = self.predict(audio_segment)
+                   
+                        predicted_class_index = self.predict(file_path)
                         
                         # Store predictions and true labels
                         predictions.append(predicted_class_index)
@@ -164,8 +152,8 @@ class AudioClassifier:
     def predict(self, audio):
         # print("class map",self.class_name_to_index)
         wav_audio = self.audio_utils.convert_to_wav(audio)
-        prep_audio = self.audio_utils.preprocess_audio(wav_audio)
-        features = self.extract_features(prep_audio, True)
+        prep_audio = self.audio_utils.preprocess_audio(audio)
+        features = self.extract_features(audio)
         
         if features is None or features.size == 0:
             raise ValueError("Feature extraction failed. No features to predict.")
@@ -185,13 +173,28 @@ class AudioClassifier:
         with open(path, "wb") as model_file:
             pickle.dump({"model": self.model, "scaler": self.scaler}, model_file)
 
+
+
     def load(self, path):
         """Load the model and scaler from disk"""
-        # print("inseifsdfadfadfadfadfa",path)
-        with open(path, "rb") as model_file:
-            print("path opened ",path)
-            data = pickle.load(model_file)
-            self.model = data["model"]
-            self.scaler = data["scaler"]
-            print("in loading ..........",self.scaler)
+        try:
+            with open(path, "rb") as model_file:
+                data = pickle.load(model_file)
+                self.model = data["model"]
+                self.scaler = data["scaler"]
+            print("Model and scaler loaded successfully from", path)
+        except FileNotFoundError:
+            print(f"Error: Model file '{path}' not found.")
+        except Exception as e:
+            print(f"Error loading model and scaler from '{path}': {e}")
+    # def load(self, path):
+    #     """Load the model and scaler from disk"""
+    #     # print("inseifsdfadfadfadfadfa",path)
+    #     with open(path, "rb") as model_file:
+    #         print("path opened ",path)
+    #         data = pickle.load(model_file)
+    #         self.model = data["model"]
+    #         self.scaler = data["scaler"]
+    #         print("in loading ..........",self.scaler)
+
 # Assuming AudioUtils class is defined elsewhere with necessary methods.

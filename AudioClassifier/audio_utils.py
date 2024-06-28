@@ -12,16 +12,12 @@ class AudioUtils:
     def __init__(self):
         self.count=0
 
-    def convert_to_wav(self, audio):
+    def convert_to_wav(self, filepath):
         try:
-            # Convert audio to AudioSegment if not already
-            if not isinstance(audio, AudioSegment):
-                raise ValueError("Input must be an instance of pydub.AudioSegment")
+            audio = AudioSegment.from_file(filepath)
 
-            # Convert to WAV format
-            wav_audio = audio.set_frame_rate(44100).set_channels(1)  # Adjust parameters as needed
-
-            return wav_audio
+            audio.export(filepath, format="wav")
+            return audio
 
         except Exception as e:
             print(f"Error converting audio: {e}")
@@ -120,9 +116,15 @@ class AudioUtils:
             print(f"Error processing directory {root_directory}: {e}")
    
 
-    def preprocess_audio(self, audio_segment: AudioSegment, sr=44100):
+    def preprocess_audio(self, filepath, sr=44100):
         try:
-            # Convert AudioSegment to numpy array
+            y, sr = librosa.load(filepath)
+            audio_segment = AudioSegment(
+                y.tobytes(), 
+                frame_rate=sr,
+                sample_width=y.dtype.itemsize,
+                channels=1  # librosa loads audio in mono
+            )
             y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
             y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
 
@@ -149,14 +151,8 @@ class AudioUtils:
                 padding = np.zeros(effective_samples - len(effective_segment), dtype=y.dtype)
                 effective_segment = np.concatenate((effective_segment, padding))
 
-            # Optionally, convert the numpy array back to an AudioSegment
-            # processed_audio_segment = AudioSegment(
-            #     (effective_segment * 32768).astype(np.int16).tobytes(),
-            #     frame_rate=sr,
-            #     sample_width=2,  # 16-bit audio has a sample width of 2 bytes
-            #     channels=1
-            # )
-
+            
+            sf.write(filepath, effective_segment, sr)
             return effective_segment
 
         except Exception as e:
