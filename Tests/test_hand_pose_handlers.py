@@ -1,5 +1,3 @@
-# test_hand_pose.py
-
 import pytest
 from handlers.hand_pose_handlers import *
 from HandPoseClassifier.hand_pose_classifier import HandPoseClassifier
