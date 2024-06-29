@@ -28,6 +28,29 @@ class TestHandPoseHandlers:
         assert result == {"event": event, "prediction": -1}
         print("Predict without training test passed")
 
+    def test_predict_with_training(self, black_image_string, mocker):
+        """
+        tests the predict function without training the model
+        should return a prediction of -1
+        """
+        mocker.patch.object(HandPoseClassifier, "predict").return_value = 0
+
+        frame_bytes = black_image_string
+        width = 320
+        height = 180
+        msg = {"frame": frame_bytes, "width": width, "height": height}
+        event = "predict_hand_pose"
+        req = Req()
+        req.msg = msg
+        req.event = event
+        res = Res()
+        # Call your function
+        result = predict_hand_pose(req, res)
+
+        # Assert that the result is as expected
+        assert result == {"event": event, "prediction": 0}
+        print("Predict with training test passed")
+
     def test_preprocess_hand_pose(self, black_image_string):
         """
         tests the preprocess_hand_pose function
