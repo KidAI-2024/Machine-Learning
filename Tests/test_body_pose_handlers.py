@@ -124,13 +124,14 @@ class TestBodyPoseHandlers:
         tests the train_body_pose function
         should return a status of success
         """
+        # mock the body_pose_classifier.train function
         mocker.patch.object(BodyPoseClassifier, "train")
-        # mock preprocess function
+        # mock body_pose_classifier.preprocess function
         mocker.patch.object(BodyPoseClassifier, "preprocess")
-        # mock feature_importance_graph function
+        # mock body_pose_classifier.feature_importance_graph function
         mocker.patch.object(BodyPoseClassifier, "feature_importance_graph").return_value = "image_string"
         # mock the utils.read_data function
-        mocker.patch("handlers.body_pose_handlers.utils.read_data").return_value = {"0": ["image1", "image2"]}
+        mocker.patch("handlers.body_pose_handlers.utils.read_data").return_value = {"0": ["image1.png", "image2.png"], "1": ["image3.png", "image4.png"]}
         # mock the body_pose_classifier.save function
         mocker.patch.object(BodyPoseClassifier, "save")
         path = "C:/Users/username/Documents/Projects/BodyPoseClassifier/models"
