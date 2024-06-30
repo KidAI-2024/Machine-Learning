@@ -5,14 +5,15 @@ from decorators import event
 from server_utils import Req, Res
 import time
 
-# image_classifier_cnn = ImageClassifierCNN()
-image_classifier_resnet = ImageClassifierResNet()
-
 NUM_WORKERS = int(os.cpu_count() / 2)
-BATCH_SIZE = 400
+BATCH_SIZE = 32
 
 train_ds = None
 valid_ds = None
+IMG_SIZE = 128
+
+# image_classifier_cnn = ImageClassifierCNN()
+image_classifier_resnet = ImageClassifierResNet(img_size=IMG_SIZE)
 
 
 @event("start_feed_hand_pose")
@@ -88,7 +89,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
     )
     try:
         print("Creating model...")
-        image_classifier_resnet.create_model()
+        image_classifier_resnet.create_model(img_size=IMG_SIZE)
         print("Reading data...")
         # training_data = read_data(path)
         project_path = os.path.join("..", "Engine", path)
@@ -135,15 +136,15 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
     model_path = os.path.join(
         "..", "Engine", "Projects", project_name, saved_model_name
     )
-    project_path = os.path.join("..", "Engine", "Projects", project_name)
+    # project_path = os.path.join("..", "Engine", "Projects", project_name)
     print(f"Loading model from {model_path}")
     print(f"Number of classes: {num_classes}")
     print(f"project_name: {project_name}")
     try:
         image_classifier_resnet.num_classes = int(num_classes)
-        image_classifier_resnet.load(model_path)
+        image_classifier_resnet.load(model_path, img_size=IMG_SIZE)
         print(f"Model loaded from {model_path}")
-        train_ds = image_classifier_resnet.read_and_preprocess_train(project_path)
+        # train_ds = image_classifier_resnet.read_and_preprocess_train(project_path)
         print("Creating data loaders...")
         res_msg = {"status": "success"}
     except Exception as e:
@@ -184,7 +185,8 @@ def predict_image_classifier(req: Req, res: Res):
         # transformed_tensor = image_classifier_resnet.transform_v(converted_tensor)
         transformed_tensor = torch.nn.functional.interpolate(
             converted_tensor.unsqueeze(0),
-            size=(256, 256),  # or (32,32)
+            size=((IMG_SIZE), IMG_SIZE),
+            # size=(32, 32),
             mode="bilinear",
             align_corners=False,
         )
@@ -196,7 +198,7 @@ def predict_image_classifier(req: Req, res: Res):
         # image = b64string_to_image_float(frame_bytes, (height, width, 3))
         # cv2.imwrite(f"./frame_{time.time()}.png", image)
         try:
-            pred = image_classifier_resnet.predict(transformed_tensor, train_ds)
+            pred = image_classifier_resnet.predict(transformed_tensor)
         except Exception as e:
             print(f"Error in predict: {e}")
             return -1

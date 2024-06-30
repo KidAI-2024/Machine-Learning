@@ -7,6 +7,7 @@ class ImageClassifierResNet:
         self,
         num_classes=2,
         in_channels=3,
+        img_size=256,
     ):
         """Constructor for the ImageClassifierReNet class
 
@@ -24,18 +25,20 @@ class ImageClassifierResNet:
         self.camera = CameraFeed()
         self.transform_t = tt.Compose(
             [
-                tt.RandomCrop(32, padding=4, padding_mode="reflect"),
+                tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
-                tt.RandomResizedCrop(256, scale=(0.5, 0.9), ratio=(1, 1)),
+                tt.RandomResizedCrop(img_size, scale=(0.5, 0.9), ratio=(1, 1)),
                 tt.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
                 tt.ToTensor(),
             ]
         )
 
-    def create_model(self):
+    def create_model(self, img_size):
         """Create the model"""
-        self.model = to_device(ResNet9(self.in_channels, self.num_classes), self.device)
+        self.model = to_device(
+            ResNet9(self.in_channels, self.num_classes, img_size), self.device
+        )
         print("model is created")
         return self.model
 
@@ -156,7 +159,7 @@ class ImageClassifierResNet:
                 save_flag=True,
             )
 
-    def predict(self, img, train_ds):
+    def predict(self, img):
         """Predict the class of the image
 
         Args:
@@ -170,7 +173,7 @@ class ImageClassifierResNet:
         # img = torch.tensor(img)
         # print("img shape: ", img.shape)
         # call predict_image function
-        return predict_image(img, self.model, self.device, train_ds)
+        return predict_image(img, self.model, self.device)
 
     def save(self, path):
         """Save the model to disk
@@ -179,12 +182,12 @@ class ImageClassifierResNet:
         """
         torch.save(self.model.state_dict(), path)
 
-    def load(self, path):
+    def load(self, path, img_size=256):
         """Load the model from disk
         Args:
             path (str): The path to load the model from
         """
-        self.create_model()
+        self.create_model(img_size=img_size)
         print("start loading model")
         self.model.load_state_dict(torch.load(path))
         self.model = to_device(self.model, self.device)

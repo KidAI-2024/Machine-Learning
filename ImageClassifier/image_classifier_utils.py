@@ -114,7 +114,7 @@ def conv_block(in_channels, out_channels, pool=False):
 
 
 class ResNet9(ImageClassificationBase):
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, in_channels, num_classes, img_size=256):
         super().__init__()
         self.num_classes = num_classes
         self.in_channels = in_channels
@@ -141,7 +141,8 @@ class ResNet9(ImageClassificationBase):
             nn.Flatten(),  # 25600
             nn.Dropout(0.2),  # 25600
             # nn.Linear(512, num_classes),  # for 32*32 img
-            nn.Linear(32768, num_classes),  # for 256*256 img
+            # nn.Linear(32768, num_classes),  # for 256*256 img
+            nn.Linear((img_size * img_size) // 2, num_classes),
         )
         # print("ResNet9 model created 3")
 
@@ -292,7 +293,7 @@ def plot_lrs(history, save_path="../../Engine/lr_batches.png", save_flag=False):
         plt.savefig(save_path)
 
 
-def predict_image(img, model, device, train_ds):
+def predict_image(img, model, device):
     """Predict the class of the image
 
     Args:
