@@ -110,7 +110,7 @@ def start_audio_capture_thread(req: Req, res: Res):
                 speaking = False
                 if audio_data_accumulated:
                     # Resample the accumulated audio data to 44100 Hz before saving
-                    audio_np_accumulated = np.frombuffer(audio_data_accumulated, dtype=np.int16).astype(np.float32) / 32768.0
+                    audio_np_accumulated = np.frombuffer(audio_data_accumulated, dtype=np.int16).astype(np.float32) 
                     audio_np_resampled = resampy.resample(audio_np_accumulated, sample_rate, 44100)
                     
                     # Ensure the audio is exactly 1 second long
@@ -132,9 +132,9 @@ def start_audio_capture_thread(req: Req, res: Res):
                     ind += 1
 
                     print(f"Predicted class: {pred}")
-                    res_msg = {"prediction": pred}
-                    res.send(req.event, res_msg)
+                    res_msg = {"prediction": str(pred)}
                     audio_data_accumulated = b""  # Reset accumulated audio
+                    res.send(req.event, res_msg)
 
     stream.stop_stream()
     stream.close()

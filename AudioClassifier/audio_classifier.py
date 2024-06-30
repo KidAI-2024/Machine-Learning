@@ -16,7 +16,7 @@ from pydub import AudioSegment
 
 class AudioClassifier:
     def __init__(self):
-        self.model = SVC(kernel='linear')
+        self.model = SVC(kernel='rbf')
         self.audio_utils = AudioUtils()
         self.class_name_to_index = {}
         self.scaler = StandardScaler()  # Make scaler an instance variable
@@ -24,12 +24,12 @@ class AudioClassifier:
     def extract_features(self, file_path, audio=False):
         try:
             if audio:
-                mfccs = librosa.feature.mfcc(y=file_path, sr=44100, n_mfcc=13)
+                mfccs = librosa.feature.mfcc(y=file_path, sr=44100, n_mfcc=11)
                 mfccs_mean = np.mean(mfccs, axis=1)
                 return mfccs_mean
             else:
                 y, sr = librosa.load(file_path, sr=None)
-                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=11)
                 mfccs_mean = np.mean(mfccs, axis=1)
                 return mfccs_mean
         except Exception as e:
@@ -75,8 +75,9 @@ class AudioClassifier:
             print(folder)
             
         self.audio_utils.convert_all_to_wav(train_directory)
+        output_directory=dir
         output_directory = self.audio_utils.preprocess_all(train_directory)
-        # self.audio_utils.process_main_directory(output_directory)
+        self.audio_utils.process_main_directory(output_directory)
         X_train, y_train, class_labels_train = self.load_dataset(output_directory)
 
         if X_train.size == 0:
@@ -103,7 +104,8 @@ class AudioClassifier:
         conf_matrix = confusion_matrix(y_train_mapped, train_predictions)
         print("Confusion Matrix :")
         print(conf_matrix)
-        self.pred_test(dir)
+        # self.pred_test(dir)
+        # self.pred_test(dir)
 
         
         print("Training completed successfully.")

@@ -60,16 +60,16 @@ class AudioUtils:
 
                         # Load the audio file
                         y, sr = librosa.load(filepath)
-                        audio_segment = AudioSegment(
-                            y.tobytes(), 
-                            frame_rate=sr,
-                            sample_width=y.dtype.itemsize,
-                            channels=1  # librosa loads audio in mono
-                        )
-                        y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
-                        y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
+                        # audio_segment = AudioSegment(
+                        #     y.tobytes(), 
+                        #     frame_rate=sr,
+                        #     sample_width=y.dtype.itemsize,
+                        #     channels=1  # librosa loads audio in mono
+                        # )
+                        # y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+                        # # y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
 
-                        # Detect non-silent segments
+                        # # Detect non-silent segments
                         non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed
 
                         # Find the effective 1 second segment
@@ -119,14 +119,14 @@ class AudioUtils:
     def preprocess_audio(self, filepath, sr=44100):
         try:
             y, sr = librosa.load(filepath)
-            audio_segment = AudioSegment(
-                y.tobytes(), 
-                frame_rate=sr,
-                sample_width=y.dtype.itemsize,
-                channels=1  # librosa loads audio in mono
-            )
-            y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
-            y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
+            # audio_segment = AudioSegment(
+            #     y.tobytes(), 
+            #     frame_rate=sr,
+            #     sample_width=y.dtype.itemsize,
+            #     channels=1  # librosa loads audio in mono
+            # )
+            # y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+            # y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
 
             # Detect non-silent segments
             non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed

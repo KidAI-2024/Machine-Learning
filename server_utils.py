@@ -22,8 +22,8 @@ class Res:
     ) -> Dict[str, str]:
         response = {"event": event}
         response.update(message)
-        for key, value in response.items():
-             print(f"Key: {key}, Value: {value}")
+        # for key, value in response.items():
+        #      print(f"Key: {key}, Value: {value}")
         return response
 
     def _send(
@@ -32,4 +32,6 @@ class Res:
         message: Dict[str, str],
     ):
         res_msg = self.build(event, message)
+        for key, value in res_msg.items():
+             print(f"Key: {key}, Value: {value}")
         self._respond_func(res_msg, self.addr)
