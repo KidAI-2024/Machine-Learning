@@ -57,6 +57,7 @@ class SocketServer:
         self.send_lock = threading.Lock()
         self.receive_threads = []
         self.send_threads = []
+        self.stop_threads = False
 
     def start(self):
         # =====================================
@@ -71,6 +72,8 @@ class SocketServer:
             # ==================Send message=================
             # ===============================================
             self.send_one_message_from_queue()
+            if self.stop_threads:
+                break
         # =====================================
         # ===========Multi-threaded===========
         # =====================================
@@ -290,5 +293,6 @@ class SocketServer:
             self.FPS_count = 0
 
     def close(self):
+        self.stop_threads = True
         self.socket.close()
         print("Socket closed")
