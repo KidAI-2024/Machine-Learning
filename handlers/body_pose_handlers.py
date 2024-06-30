@@ -133,9 +133,9 @@ def predict_body_pose(req: Req, res: Res):
         print(f"Invalid height: {height_str}")
     # Convert the bytes to an image
     image = utils.b64string_to_image(frame_bytes, (height, width, 3))
-    # preprocessed_img = body_pose_classifier.preprocess(image)
-    # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", preprocessed_img)
-    # body_pose_classifier.load("./body_pose_model.pkl")
+
+    # preprocess_image = body_pose_classifier.preprocess_draw_landmarks(image)
+    # preprocess_image_str = utils.image_to_b64string(preprocess_image)
     try:
         pred = body_pose_classifier.predict(image)
     except Exception as e:
