@@ -2,6 +2,7 @@ import os
 import cv2
 import base64
 import numpy as np
+import torch
 
 
 # returns map {"Class Number(first character in the folder name)" : [images]}
@@ -38,6 +39,13 @@ def b64string_to_image(frame_bytes, shape):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # Flip the image vertically
     image = cv2.flip(image, 0)
+    return image
+
+
+def b64string_to_image_float(frame_bytes, shape):
+    image = b64string_to_image(frame_bytes, shape)
+    # Convert the image to float
+    image = image.astype(np.float32)
     return image
 
 
