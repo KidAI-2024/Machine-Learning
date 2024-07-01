@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import tarfile
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
@@ -14,7 +13,6 @@ from torchvision.datasets import ImageFolder
 from torchvision.transforms import ToTensor
 import matplotlib
 import matplotlib.pyplot as plt
-import pickle
 import os
 import cv2
 import numpy as np
@@ -66,7 +64,39 @@ def accuracy(outputs, labels):
     return torch.tensor(torch.sum(preds == labels).item() / len(preds))
 
 
-class ImageClassificationBase(nn.Module):
+class ImageClassificationBaseCNN(nn.Module):
+    def training_step(self, batch):
+        images, labels = batch
+        # print("get batch")
+        out = self(images)  # Generate predictions
+        # print("get predictions")
+        loss = F.cross_entropy(out, labels)  # Calculate loss
+        # print("get loss")
+        return loss
+
+    def validation_step(self, batch):
+        images, labels = batch
+        out = self(images)  # Generate predictions
+        loss = F.cross_entropy(out, labels)  # Calculate loss
+        acc = accuracy(out, labels)  # Calculate accuracy
+        return {"val_loss": loss.detach(), "val_acc": acc}
+
+    def validation_epoch_end(self, outputs):
+        batch_losses = [x["val_loss"] for x in outputs]
+        epoch_loss = torch.stack(batch_losses).mean()  # Combine losses
+        batch_accs = [x["val_acc"] for x in outputs]
+        epoch_acc = torch.stack(batch_accs).mean()  # Combine accuracies
+        return {"val_loss": epoch_loss.item(), "val_acc": epoch_acc.item()}
+
+    def epoch_end(self, epoch, result):
+        print(
+            "Epoch [{}], train_loss: {:.4f}, val_loss: {:.4f}, val_acc: {:.4f}".format(
+                epoch, result["train_loss"], result["val_loss"], result["val_acc"]
+            )
+        )
+
+
+class ImageClassificationBaseResnet(nn.Module):
     def training_step(self, batch):
         images, labels = batch
         # print("get batch")
@@ -113,7 +143,7 @@ def conv_block(in_channels, out_channels, pool=False):
     return nn.Sequential(*layers)
 
 
-class ResNet9(ImageClassificationBase):
+class ResNet9(ImageClassificationBaseResnet):
     def __init__(self, in_channels, num_classes, img_size=256):
         super().__init__()
         self.num_classes = num_classes
@@ -235,6 +265,32 @@ def fit_one_cycle(
     return history
 
 
+def fit_without_decay_lr(
+    epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD
+):
+    print("fit_without_decay_lr")
+    history = []
+    optimizer = opt_func(model.parameters(), lr)
+    for epoch in range(epochs):
+        # Training Phase
+        print(f"Epoch {epoch+1}")
+        model.train()
+        train_losses = []
+        for batch in train_loader:
+            loss = model.training_step(batch)
+            train_losses.append(loss)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+        # Validation phase
+        if val_loader is not None:
+            result = evaluate(model, val_loader)
+            result["train_loss"] = torch.stack(train_losses).mean().item()
+            model.epoch_end(epoch, result)
+            history.append(result)
+    return history
+
+
 def plot_accuracies(history, save_path="../../Engine/accuracy.png", save_flag=False):
     """Plot the accuracies from the history
 
@@ -319,35 +375,33 @@ def predict_image(img, model, device):
     return preds[0].item()
 
 
-def calc_mean_std_of_each_channel(path, in_channels=3):
-    try:
-        project_path = os.path.join("..", "Engine", path)
-        channels = []
-        for i in range(in_channels):
-            channels.append([])
+class Cifar10CnnModel(ImageClassificationBaseCNN):
 
-        # Loop over folders in the specified path
-        for folder in os.listdir(project_path):
-            folder_path = os.path.join(project_path, folder)
-            if os.path.isdir(folder_path):
-                for file_name in os.listdir(folder_path):
-                    if file_name.endswith(".png"):
-                        image_path = os.path.join(folder_path, file_name)
-                        image = cv2.imread(image_path)
-                        # Split the image into channels
-                        for i in range(in_channels):
-                            channels[i].extend(image[:, :, i].flatten())
+    def __init__(self, in_channels, num_classes, img_size=256):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Conv2d(in_channels, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # output: 16 x 16  x 64
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # output: 8 x 8 x 128
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # output:  4 x 4 x 256
+            nn.Flatten(),
+            nn.Linear((img_size // 8) ** 2 * 256, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_classes),
+        )
 
-        # Calculate the mean and std of each channel
-        means = []
-        stds = []
-        for channel in channels:
-            mean = np.mean(channel)
-            std = np.std(channel)
-            means.append(mean)
-            stds.append(std)
-    except:
-        # Error reading data from path (wrong path)
-        print("Error reading data from path")
-        return ()
-    return (tuple(means), tuple(stds))
+    def forward(self, xb):
+        return self.network(xb)

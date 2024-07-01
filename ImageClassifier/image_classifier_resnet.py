@@ -15,8 +15,8 @@ class ImageClassifierResNet:
             num_classes (int, optional): The number of classes you want predict. Defaults to 2.
             in_channels (int, optional): The number of input channels for the images. Defaults to 3.
         """
-        # self.device = get_default_device()
-        self.device = torch.device("cpu")
+        self.device = get_default_device()
+        # self.device = torch.device("cpu")
         self.model = None
         self.num_classes = num_classes
         self.in_channels = in_channels
@@ -42,7 +42,7 @@ class ImageClassifierResNet:
         print("model is created")
         return self.model
 
-    def read_and_preprocess_train(self, path):
+    def read_and_preprocess_train(self, path, train_precentage=0.8):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
@@ -54,9 +54,16 @@ class ImageClassifierResNet:
         # Data transforms (data augmentation)
 
         # PyTorch datasets
-        train_ds = ImageFolder(path, self.transform_t)
+        dataset = ImageFolder(path, self.transform_t)
+        self.train_size = int(train_precentage * len(dataset))
+        self.valid_size = len(dataset) - self.train_size
         # train_ds = ImageFolder(path + "/train", train_tfms)
-        return train_ds
+        if self.valid_size == 0:
+            train_ds = dataset
+            val_ds = None
+        else:
+            train_ds, val_ds = random_split(dataset, [self.train_size, self.valid_size])
+        return train_ds, val_ds
 
     def read_and_preprocess_test(self, path):
         """Preprocess the images
@@ -90,12 +97,14 @@ class ImageClassifierResNet:
                 num_workers=num_workers,
                 pin_memory=pin_memory,
             )
+            train_dl = DeviceDataLoader(train_dl, self.device)
         else:
             train_dl = None
         if valid_ds is not None:
             valid_dl = DataLoader(
                 valid_ds, batch_size * 2, num_workers=num_workers, pin_memory=pin_memory
             )
+            valid_dl = DeviceDataLoader(valid_dl, self.device)
         else:
             valid_dl = None
         return train_dl, valid_dl
@@ -143,19 +152,19 @@ class ImageClassifierResNet:
             # plot the accuracies and save it
             plot_accuracies(
                 self.history,
-                save_path=f"{project_path}/renet_accuracy.png",
+                save_path=f"{project_path}/epoch_accuracy.png",
                 save_flag=True,
             )
             # plot losses and save it
             plot_losses(
                 self.history,
-                save_path=f"{project_path}/renet_loss.png",
+                save_path=f"{project_path}/epoch_loss.png",
                 save_flag=True,
             )
             # plot learning rates and save it
             plot_lrs(
                 self.history,
-                save_path=f"{project_path}/renet_lr.png",
+                save_path=f"{project_path}/epoch_lr.png",
                 save_flag=True,
             )
 
