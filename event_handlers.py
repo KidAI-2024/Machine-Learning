@@ -4,6 +4,7 @@ from handlers.hand_pose_handlers import *
 from handlers.general_handlers import *
 
 from handlers.body_pose_handlers import *
+from handlers.audio_handlers import *
 from handlers.image_classifier_handlers import *
 from decorators import events
 from server_utils import Req, Res
