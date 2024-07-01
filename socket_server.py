@@ -180,8 +180,7 @@ class SocketServer:
             response_str = json.dumps(response)
             response_bytes = response_str.encode("utf-8")
             self._respond_complete_message(response_bytes, addr)
-            print("response from python ",response)
-            print("addr from python ",addr)
+            
         except socket.error as e:
             print("errorr 1 ",e)
             return
