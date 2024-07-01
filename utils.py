@@ -3,36 +3,7 @@ import cv2
 import base64
 import numpy as np
 import os
-import soundfile as sf
-
-
-
-
-def read_audio(path):
-    try:
-        project_path = os.path.join("..", "Engine", path)
-        # Create empty map {"Class Number(first character in the folder name)" : [audio_data]}
-        training_data = {}
-        # Loop over folders in the specified path
-        for folder in os.listdir(project_path):
-            folder_path = os.path.join(project_path, folder)
-            class_name = folder[0]
-            if os.path.isdir(folder_path):
-                audio_data = []
-                for file_name in os.listdir(folder_path):
-                    if file_name.endswith(".wav"):
-                        audio_path = os.path.join(folder_path, file_name)
-                        # Read the audio file
-                        audio, samplerate = sf.read(audio_path)
-                        audio_data.append(audio)
-                training_data[class_name] = audio_data
-    except Exception as e:
-        # Error reading data from path (wrong path)
-        print(f"Error reading data from path: {e}")
-        return {}
-    return training_data
-
-
+import torch
 
 
 
@@ -72,6 +43,13 @@ def b64string_to_image(frame_bytes, shape):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # Flip the image vertically
     image = cv2.flip(image, 0)
+    return image
+
+
+def b64string_to_image_float(frame_bytes, shape):
+    image = b64string_to_image(frame_bytes, shape)
+    # Convert the image to float
+    image = image.astype(np.float32)
     return image
 
 
