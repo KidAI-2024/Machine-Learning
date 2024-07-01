@@ -5,6 +5,11 @@ opencv-python
 numpy
 torch
 torchvision
-Pytest
+torchaudio
+pytest
 pytest-mock
-
+librosa
+pydub
+soundfile
+resampy
+# conda install -c conda-forge webrtcvad pyaudio

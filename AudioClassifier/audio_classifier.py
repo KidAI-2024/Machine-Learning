@@ -185,16 +185,18 @@ class AudioClassifier:
 
     def load(self, path):
         """Load the model and scaler from disk"""
-        try:
-            with open(path, "rb") as model_file:
-                data = pickle.load(model_file)
-                self.model = data["model"]
-                self.scaler = data["scaler"]
-            print("Model and scaler loaded successfully from", path)
-        except FileNotFoundError:
-            print(f"Error: Model file '{path}' not found.")
-        except Exception as e:
-            print(f"Error loading model and scaler from '{path}': {e}")
+        # try:
+        with open(path, "rb") as model_file:
+            data = pickle.load(model_file)
+            self.model = data["model"]
+            self.scaler = data["scaler"]
+        print("Model and scaler loaded successfully from", path)
+        # except FileNotFoundError:
+        #     print(f"Error: Model file '{path}' not found.")
+        # except Exception as e:
+        #     print(f"Error loading model and scaler from '{path}': {e}")
+
+
     # def load(self, path):
     #     """Load the model and scaler from disk"""
     #     # print("inseifsdfadfadfadfadfa",path)
