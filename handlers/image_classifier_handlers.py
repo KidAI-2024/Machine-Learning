@@ -10,7 +10,7 @@ BATCH_SIZE = 32
 
 train_ds = None
 valid_ds = None
-IMG_SIZE = 128
+IMG_SIZE = 64
 
 # image_classifier_cnn = ImageClassifierCNN()
 image_classifier_resnet = ImageClassifierResNet(img_size=IMG_SIZE)
