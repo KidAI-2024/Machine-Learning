@@ -12,7 +12,7 @@ import threading
 import shutil
 import webrtcvad
 import resampy
-
+import time
 audio_classifier = AudioClassifier()
 
 # Initialize PyAudio
@@ -89,6 +89,7 @@ def start_audio_capture_thread(req: Req, res: Res):
     speaking = False
 
     while not stop_prediction:
+        t0=time.time()
         audio_data = stream.read(chunk_size)
         audio_np = np.frombuffer(audio_data, dtype=np.int16)
 
@@ -99,13 +100,14 @@ def start_audio_capture_thread(req: Req, res: Res):
             if len(frame) == chunk_size and vad.is_speech(frame.tobytes(), sample_rate):
                 speech_detected = True
                 break
-
+        t10=time.time()
         if speech_detected:
             print("Voice detected")
             speaking = True
             audio_data_accumulated += audio_data
         else:
             if speaking:
+                print("intial ",t10-t0)
                 print("Silence detected, processing accumulated audio")
                 speaking = False
                 if audio_data_accumulated:
@@ -122,16 +124,17 @@ def start_audio_capture_thread(req: Req, res: Res):
 
                     sf.write("accumulated_audio.wav", audio_np_resampled, 44100)
                     
-                    y, sr = librosa.load("accumulated_audio.wav", sr=44100)
-                    
+                    # y, sr = librosa.load("accumulated_audio.wav", sr=44100)
+                    st=time.time()
                     pred = audio_classifier.predict("accumulated_audio.wav")
-
-                    filename = f"{pred}_loaded_audio_{ind}.wav"
-                    file_path = os.path.join(audio_save_dir, filename)
-                    sf.write(file_path, y, sr)
+                    end=time.time()
+                    print("prediction time ",end-st)
+                    # filename = f"{pred}_loaded_audio_{ind}.wav"
+                    # file_path = os.path.join(audio_save_dir, filename)
+                    # sf.write(file_path, y, sr)
                     ind += 1
 
-                    print(f"Predicted class: {pred}")
+                    # print(f"Predicted class: {pred}")
                     res_msg = {"prediction": str(pred)}
                     audio_data_accumulated = b""  # Reset accumulated audio
                     res.send(req.event, res_msg)

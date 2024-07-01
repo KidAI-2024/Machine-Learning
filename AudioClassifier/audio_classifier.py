@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pydub import AudioSegment
-
+import time
 
 
 class AudioClassifier:
@@ -24,12 +24,12 @@ class AudioClassifier:
     def extract_features(self, file_path, audio=False):
         try:
             if audio:
-                mfccs = librosa.feature.mfcc(y=file_path, sr=44100, n_mfcc=11)
+                mfccs = librosa.feature.mfcc(y=file_path, sr=44100, n_mfcc=13)
                 mfccs_mean = np.mean(mfccs, axis=1)
                 return mfccs_mean
             else:
                 y, sr = librosa.load(file_path, sr=None)
-                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=11)
+                mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
                 mfccs_mean = np.mean(mfccs, axis=1)
                 return mfccs_mean
         except Exception as e:
@@ -153,10 +153,16 @@ class AudioClassifier:
 
     def predict(self, audio):
         # print("class map",self.class_name_to_index)
+        t1=time.time()
         wav_audio = self.audio_utils.convert_to_wav(audio)
+        t2=time.time()
         prep_audio = self.audio_utils.preprocess_audio(audio)
+        t3=time.time()
         features = self.extract_features(audio)
-        
+        t4=time.time()
+        print("first time ",t2-t1)
+        print("second time ",t3-t2)
+        print("first time ",t4-t3)
         if features is None or features.size == 0:
             raise ValueError("Feature extraction failed. No features to predict.")
         
