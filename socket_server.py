@@ -180,9 +180,12 @@ class SocketServer:
             response_str = json.dumps(response)
             response_bytes = response_str.encode("utf-8")
             self._respond_complete_message(response_bytes, addr)
+            
         except socket.error as e:
+            print("errorr 1 ",e)
             return
         except Exception as e:
+            print("errorr 2 ",e)
             return
 
     def _respond_in_chunks(self, response_bytes: bytes, addr):
