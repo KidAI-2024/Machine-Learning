@@ -1,0 +1,15 @@
+mediapipe
+scikit-learn
+matplotlib
+opencv-python
+numpy
+torch
+torchvision
+torchaudio
+pytest
+pytest-mock
+librosa
+pydub
+soundfile
+resampy
+# conda install -c conda-forge webrtcvad pyaudio
