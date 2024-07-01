@@ -38,7 +38,6 @@ vad.set_mode(3)  # 0: least aggressive, 3: most aggressive
 @event("start_audio_train")
 def train_audio(req: Req, res: Res) -> int:
     path = req.msg["path"]
-    path = os.path.abspath(os.path.join(path, '../../../Engine', path))
     
     # Training data is map {"Class Number(first character in the folder name)" : [images]}
     print("Training data...")
@@ -48,9 +47,7 @@ def train_audio(req: Req, res: Res) -> int:
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "audio_model.pkl"
-    model_path = os.path.join(
-        "..", "Engine", "Projects", project_name, saved_model_name
-    )  # Current directory is Machine-Learning
+    model_path = os.path.join(path, project_name, saved_model_name)   # Current directory is Machine-Learning
     audio_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
@@ -61,11 +58,11 @@ def train_audio(req: Req, res: Res) -> int:
 @event("load_audio_model")
 def load_audio_model(req: Req, res: Res) -> int:
     print("In loading...")
-    project_name = req.msg["project_name"]
+    path = req.msg["path"]
     saved_model_name = req.msg["saved_model_name"]
     if not saved_model_name:
         saved_model_name = "audio_model.pkl"
-    model_path = os.path.join("..", "Engine", "Projects", project_name, saved_model_name)
+    model_path = os.path.join(path, saved_model_name)
     try:
         audio_classifier.load(model_path)
         print(f"Model loaded from {model_path}")

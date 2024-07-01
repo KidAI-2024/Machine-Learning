@@ -92,8 +92,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
         image_classifier_resnet.create_model(img_size=IMG_SIZE)
         print("Reading data...")
         # training_data = read_data(path)
-        project_path = os.path.join("..", "Engine", path)
-        train_ds = image_classifier_resnet.read_and_preprocess_train(project_path)
+        train_ds = image_classifier_resnet.read_and_preprocess_train(path)
         # valid_ds = image_classifier_resnet.read_and_preprocess_test(path)
     except Exception as e:
         print(f"Error in preprocess: {e}")
@@ -106,7 +105,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
         )
         print("Training...")
         image_classifier_resnet.train(
-            project_path,
+            path,
             epochs=epochs,
             max_lr=max_lr,
             train_dl=train_dl,
@@ -118,9 +117,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "image_classifier_model.pkl"
-    model_path = os.path.join(
-        "..", "Engine", "Projects", project_name, saved_model_name
-    )  # Currect directory is Machine-Learning
+    model_path = os.path.join(path, project_name, saved_model_name)  # Currect directory is Machine-Learning
     image_classifier_resnet.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
@@ -130,16 +127,13 @@ def train_image_classifier(req: Req, res: Res) -> int:
 
 @event("load_image_classifier_model")
 def load_image_classifier_model(req: Req, res: Res) -> int:
-    project_name = req.msg["project_name"]
+    path = req.msg["path"]
     saved_model_name = req.msg["saved_model_name"]
     num_classes = req.msg["num_classes"]
-    model_path = os.path.join(
-        "..", "Engine", "Projects", project_name, saved_model_name
-    )
+    model_path = os.path.join(path, saved_model_name)
     # project_path = os.path.join("..", "Engine", "Projects", project_name)
     print(f"Loading model from {model_path}")
     print(f"Number of classes: {num_classes}")
-    print(f"project_name: {project_name}")
     try:
         image_classifier_resnet.num_classes = int(num_classes)
         image_classifier_resnet.load(model_path, img_size=IMG_SIZE)
