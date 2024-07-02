@@ -247,7 +247,7 @@ class HandPoseUtils:
 
         return width_ratios
 
-    def extract_features(self, image):
+    def extract_features(self, image, selected_features_list=None):
         """Extract hand pose features from a single image."""
         # Get hand landmarks.
         landmarks = self.get_hand_landmarks(image)
@@ -276,10 +276,35 @@ class HandPoseUtils:
 
         # Calculate finger width ratio features.
         finger_width_ratios = self.calculate_finger_width_ratios(landmarks)
-
-        # Concatenate all features into one array.
-        features = np.array(
-            [
+        features = []
+        if selected_features_list:
+            for feature in selected_features_list:
+                if feature == "HandArea":
+                    features.append(hand_area)
+                elif feature == "HandPerimeter":
+                    features.append(hand_perimeter)
+                elif feature == "ThumbIndexAngle":
+                    features.append(thumb_index_angle_deg)
+                elif feature == "ThumbIndexDistance":
+                    features.append(thumb_index_distance)
+                elif feature == "PalmWidth":
+                    features.append(palm_width)
+                elif feature == "PalmHeight":
+                    features.append(palm_height)
+                elif feature == "PalmCenter":
+                    features.append(palm_center_x)
+                    features.append(palm_center_y)
+                elif feature == "FingerCurvatures":
+                    features.extend(finger_curvatures)
+                elif feature == "FingerWidthRatios":
+                    features.extend(finger_width_ratios)
+                if (
+                    "PalmWidth" in selected_features_list
+                    and "PalmHeight" in selected_features_list
+                ):
+                    features.append(width_height_ratio)
+        else:
+            features = [
                 hand_area,
                 hand_perimeter,
                 thumb_index_angle_deg,
@@ -292,16 +317,17 @@ class HandPoseUtils:
                 *finger_curvatures,
                 *finger_width_ratios,
             ]
-        )
+        # Concatenate all features into one array.
+        features = np.array(features)
         return features
 
-    def get_training_features(self, training_data):
+    def get_training_features(self, training_data, selected_features_list=None):
         """Extract hand pose features from the dictionary of training images."""
         features_map = {}
         for class_name, images in training_data.items():
             features_list = []
             for image in images:
-                features = self.extract_features(image)
+                features = self.extract_features(image, selected_features_list)
                 features_list.append(features)
             features_map[class_name] = features_list
         return features_map

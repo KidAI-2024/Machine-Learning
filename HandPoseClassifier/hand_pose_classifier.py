@@ -13,10 +13,13 @@ class HandPoseClassifier:
         self.model = SVC(kernel="linear")
         self.hand_pose_utils = HandPoseUtils()
         self.camera = CameraFeed()
+        self.selected_features_list = None
 
     def preprocess(self, data):
         """Preprocess the data to extract features from the dictionary of images"""
-        features_map = self.hand_pose_utils.get_training_features(data)
+        features_map = self.hand_pose_utils.get_training_features(
+            data, self.selected_features_list
+        )
         return features_map
 
     def preprocess_draw_landmarks(self, image):
@@ -47,7 +50,9 @@ class HandPoseClassifier:
         if np.all(image == 0):
             return -1
 
-        features = self.hand_pose_utils.extract_features(image)
+        features = self.hand_pose_utils.extract_features(
+            image, self.selected_features_list
+        )
         # features = features[0]
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)

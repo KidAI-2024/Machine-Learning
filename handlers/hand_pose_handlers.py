@@ -65,6 +65,19 @@ def preprocess_hand_pose(req: Req, res: Res):
 @event("train_hand_pose")
 def train_hand_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
+    model = req.msg["model"]
+    print(f"Training hand pose model using {model} model")
+    feature_extraction_type = req.msg["feature_extraction_type"]
+    print(f"Feature extraction type: {feature_extraction_type}")
+    selected_features = req.msg["features"].split(",")
+    hand_pose_classifier.selected_features_list = selected_features
+    print(f"Selected features: {selected_features}")
+    if feature_extraction_type == "mediapipe" and selected_features == [""]:
+        res_msg = {
+            "status": "failed",
+            "error": "Select some features to train the model",
+        }
+        return res.build(req.event, res_msg)
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     print("Reading data...")
     training_data = utils.read_data(path)
@@ -73,7 +86,10 @@ def train_hand_pose(req: Req, res: Res) -> int:
         features_map = hand_pose_classifier.preprocess(training_data)
     except Exception as e:
         print(f"Error in preprocess: {e}")
-        res_msg = {"status": "failed"}
+        res_msg = {
+            "status": "failed",
+            "error": "Training data contains invalid images",
+        }
         return res.build(req.event, res_msg)
     print("Training...")
     try:
@@ -85,7 +101,9 @@ def train_hand_pose(req: Req, res: Res) -> int:
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "hand_pose_model.pkl"
-    model_path = os.path.join(path, project_name, saved_model_name)  # Currect directory is Machine-Learning
+    model_path = os.path.join(
+        path, project_name, saved_model_name
+    )  # Currect directory is Machine-Learning
     hand_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
@@ -128,6 +146,10 @@ def predict_hand_pose(req: Req, res: Res):
 def load_hand_pose_model(req: Req, res: Res) -> int:
     path = req.msg["path"]
     saved_model_name = req.msg["saved_model_name"]
+    model_path = os.path.join(path, saved_model_name)
+    model = req.msg["model"]
+    feature_extraction_type = req.msg["feature_extraction_type"]
+    hand_pose_classifier.selected_features_list = req.msg["features"].split(",")
     model_path = os.path.join(path, saved_model_name)
     try:
         hand_pose_classifier.load(model_path)
