@@ -30,6 +30,9 @@ from sklearn.model_selection import (
 )
 import time
 import json
+from skimage.feature import hog
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 matplotlib.rcParams["figure.facecolor"] = "#ffffff"
 

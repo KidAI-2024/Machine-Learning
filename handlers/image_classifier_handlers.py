@@ -1,9 +1,7 @@
 from ImageClassifier.image_classifier_cnn import ImageClassifierCNN
-from ImageClassifier.image_classifier_svm import ImageClassifierSVM
+from ImageClassifier.image_classifier_classical import ImageClassifierClassical
 from ImageClassifier.image_classifier_resnet import ImageClassifierResNet
-from ImageClassifier.image_classifier_logistic_regression import (
-    ImageClassifierLogisticRegression,
-)
+
 
 from utils import *
 from decorators import event
@@ -20,7 +18,7 @@ IMG_SIZE = 32
 # image_classifier = ImageClassifierCNN(img_size=IMG_SIZE)
 # image_classifier = ImageClassifierResNet(img_size=IMG_SIZE)
 # image_classifier = ImageClassifierLogisticRegression(img_size=IMG_SIZE) #TODO: implement the model and call the functions
-image_classifier = ImageClassifierSVM(img_size=IMG_SIZE)
+image_classifier = ImageClassifierClassical(img_size=IMG_SIZE)
 
 
 @event("start_feed_hand_pose")
@@ -91,6 +89,8 @@ def train_image_classifier(req: Req, res: Res) -> int:
     # weight_decay = req.msg["weight_decay"]
     # opt_func = req.msg["opt_func"]
     image_classifier.num_classes = num_classes
+    image_classifier.feature_extraction_type = 1  # Hog
+    image_classifier.model_type = 2  # RandomForest
     print(f"Training image classifier with {image_classifier.num_classes} classes")
     try:
         print("Reading data...")
@@ -108,14 +108,15 @@ def train_image_classifier(req: Req, res: Res) -> int:
         #     train_ds, valid_ds, BATCH_SIZE, NUM_WORKERS, True
         # ) #for deeplearning models
         print("Training...")
-        acc = image_classifier.train(
+        training_accuracy, valid_accuracy = image_classifier.train(
             path,
             # epochs=epochs, #for deeplearning models
             # max_lr=max_lr,
             # train_dl=train_dl,
             # valid_dl=valid_dl,
         )
-        print(f"Accuracy: {acc}")
+        print(f"Training accuracy: {training_accuracy}")
+        print(f"Validation accuracy: {valid_accuracy}")
     except Exception as e:
         print(f"Error in train: {e}")
         return -1
@@ -131,6 +132,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
     # )  # Currect directory is Machine-Learning
     image_classifier.save(model_path)
     print("Training completed successfully!")
+    # TODO: add training_accuracy, valid_accuracy to res_msg
     res_msg = {"status": "success", "saved_model_name": saved_model_name}
     return res.build(req.event, res_msg)
 
@@ -145,6 +147,8 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
     print(f"Loading model from {model_path}")
     print(f"Number of classes: {num_classes}")
     try:
+        image_classifier.feature_extraction_type = 1  # Hog
+        image_classifier.model_type = 2  # RandomForest
         image_classifier.num_classes = int(num_classes)
         image_classifier.load(model_path, img_size=IMG_SIZE)
         print(f"Model loaded from {model_path}")
