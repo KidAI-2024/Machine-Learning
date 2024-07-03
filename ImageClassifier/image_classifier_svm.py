@@ -62,6 +62,7 @@ class ImageClassifierSVM:
         for img, label in train_ds:
             # convert tensor to numpy array
             img = img.numpy()
+            print("img shape", img.shape)  # TODO: fix the error in the image shape
             # Keypoints, descriptors
             kp, descriptor = self.sift.detectAndCompute(img, None)
             # Each keypoint has a descriptor with length 128
@@ -88,13 +89,18 @@ class ImageClassifierSVM:
                         (self.feature_set_valid, descriptor), axis=0
                     )
                     self.y_valid.append(label)
+
+        print("length of y_train", len(self.y_train))
+        print("length of y_valid", len(self.y_valid))
+        print("length of feature_set_train", len(self.feature_set_train))
+        print("length of feature_set_valid", len(self.feature_set_valid))
+
         return train_ds, val_ds
 
     def create_model(self, n_clusters=1600):
         """Create the model"""
         # Kmeans clustering on all training set
-        print("Success")
-        print("Running kmeans...")
+        print("creating kmeans...")
         self.n_clusters = n_clusters
         self.k_means = cluster.KMeans(
             n_clusters=self.n_clusters, init="k-means++", n_init="auto", max_iter=1000
@@ -103,7 +109,6 @@ class ImageClassifierSVM:
         self.svm = svm.SVC(
             decision_function_shape="ovo", random_state=42, max_iter=1000
         )
-        print("Success svm")
 
     def read_test_data(self, path):
         """Preprocess the images
@@ -198,17 +203,21 @@ class ImageClassifierSVM:
         Args:
             path (str): The path to save the model to
         """
-        pickle.dump(self.k_means, open(path + self.filename1, "wb"))
+        pickle.dump(self.k_means, open(os.path.join(path, self.filename1), "wb"))
         # # save the SVM model to disk
-        pickle.dump(self.model, open(path + self.filename2, "wb"))
+        pickle.dump(self.model, open(os.path.join(path, self.filename2), "wb"))
 
     def load(self, path, img_size=256):
         """Load the model from disk
         Args:
             path (str): The path to load the model from
         """
-        self.k_means = pickle.load(open(path + self.filename1, "rb"))
-        self.model = pickle.load(open(path + self.filename2, "rb"))
+        try:
+            self.k_means = pickle.load(open(os.path.join(path, self.filename1), "rb"))
+            self.model = pickle.load(open(os.path.join(path, self.filename2), "rb"))
+        except Exception as e:
+            print(f"Error in load: {e}")
+            # self.create_model()
 
     def start_feed(self):
         """Start the camera feed"""

@@ -115,6 +115,7 @@ def train_image_classifier(req: Req, res: Res) -> int:
             # train_dl=train_dl,
             # valid_dl=valid_dl,
         )
+        print(f"Accuracy: {acc}")
     except Exception as e:
         print(f"Error in train: {e}")
         return -1
@@ -147,7 +148,6 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
         image_classifier.num_classes = int(num_classes)
         image_classifier.load(model_path, img_size=IMG_SIZE)
         print(f"Model loaded from {model_path}")
-        print("Creating data loaders...")
         res_msg = {"status": "success"}
     except Exception as e:
         print(f"Error in load: {e}")
