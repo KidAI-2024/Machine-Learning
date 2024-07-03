@@ -36,7 +36,14 @@ class ImageClassifierLogisticRegression:
         )
 
     def create_model(self, input_size=256):
-        """Create the model"""
+        """This function creates the model
+
+        Args:
+            input_size (int, optional): The size of the feature vector. Defaults to 256.
+
+        Returns:
+            LogisticRegressionModel: The created model
+        """
         self.model = to_device(
             LogisticRegressionModel(input_size, self.num_classes),
             self.device,
@@ -44,7 +51,7 @@ class ImageClassifierLogisticRegression:
         print("model is created")
         return self.model
 
-    def read_and_preprocess_train(self, path, train_precentage=0.8):
+    def read_train_data(self, path, train_precentage=0.8):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
@@ -67,7 +74,7 @@ class ImageClassifierLogisticRegression:
             train_ds, val_ds = random_split(dataset, [self.train_size, self.valid_size])
         return train_ds, val_ds
 
-    def read_and_preprocess_test(self, path):
+    def read_test_data(self, path):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
@@ -110,6 +117,9 @@ class ImageClassifierLogisticRegression:
         else:
             valid_dl = None
         return train_dl, valid_dl
+
+    def preprocess_image(self, image):
+        pass
 
     def train(
         self,

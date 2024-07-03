@@ -44,7 +44,7 @@ class ImageClassifierCNN:
         print("model is created")
         return self.model
 
-    def read_and_preprocess_train(self, path, train_precentage=0.8):
+    def read_train_data(self, path, train_precentage=0.8):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
@@ -67,7 +67,7 @@ class ImageClassifierCNN:
             train_ds, val_ds = random_split(dataset, [self.train_size, self.valid_size])
         return train_ds, val_ds
 
-    def read_and_preprocess_test(self, path):
+    def read_test_data(self, path):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n

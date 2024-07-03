@@ -14,17 +14,27 @@ from torchvision.transforms import ToTensor
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-import cv2
 import numpy as np
 from PIL import Image
 import io
 import base64
+import cv2
+from sklearn import svm
+from sklearn import cluster
+import pickle
+from sklearn.model_selection import (
+    GridSearchCV,
+    learning_curve,
+    validation_curve,
+    train_test_split,
+)
 
 matplotlib.rcParams["figure.facecolor"] = "#ffffff"
 
 batch_size = 400
 random_seed = 42
 torch.manual_seed(random_seed)
+np.random.seed(random_seed)
 
 
 def get_default_device():
@@ -440,8 +450,13 @@ class LogisticRegressionModel(nn.Module):
         return {"val_loss": epoch_loss.item(), "val_acc": epoch_acc.item()}
 
     def epoch_end(self, epoch, result):
+        # print(
+        #     "Epoch [{}], val_loss: {:.4f}, val_acc: {:.4f}".format(
+        #         epoch, result["val_loss"], result["val_acc"]
+        #     )
+        # )
         print(
-            "Epoch [{}], val_loss: {:.4f}, val_acc: {:.4f}".format(
-                epoch, result["val_loss"], result["val_acc"]
+            "Epoch [{}], train_loss: {:.4f}, val_loss: {:.4f}, val_acc: {:.4f}".format(
+                epoch, result["train_loss"], result["val_loss"], result["val_acc"]
             )
         )
