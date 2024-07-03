@@ -93,11 +93,11 @@ def train_image_classifier(req: Req, res: Res) -> int:
     image_classifier.num_classes = num_classes
     print(f"Training image classifier with {image_classifier.num_classes} classes")
     try:
-        print("Creating model...")
-        # image_classifier.create_model(img_size=IMG_SIZE) #for deeplearning models
-        image_classifier.create_model()
         print("Reading data...")
         train_ds, valid_ds = image_classifier.read_train_data(path, 0.9)
+        print("Creating model...")
+        image_classifier.create_model()
+        # image_classifier.create_model(img_size=IMG_SIZE) #for deeplearning models
     except Exception as e:
         print(f"Error in preprocess: {e}")
         return -1
@@ -125,11 +125,11 @@ def train_image_classifier(req: Req, res: Res) -> int:
     model_path = os.path.join(
         path, project_name
     )  # Currect directory is Machine-Learning
+    print(f"Model saved to {model_path}")
     # model_path = os.path.join( #deeplearning models
     #     path, project_name, saved_model_name
     # )  # Currect directory is Machine-Learning
     image_classifier.save(model_path)
-    print(f"Model saved to {model_path}")
     print("Training completed successfully!")
     res_msg = {"status": "success", "saved_model_name": saved_model_name}
     return res.build(req.event, res_msg)
@@ -141,7 +141,7 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
     saved_model_name = req.msg["saved_model_name"]
     num_classes = req.msg["num_classes"]
     # model_path = os.path.join(path, saved_model_name) #deeplearning models
-    model_path = path
+    model_path = path  # for machine learning models
     print(f"Loading model from {model_path}")
     print(f"Number of classes: {num_classes}")
     try:
@@ -177,6 +177,8 @@ def predict_image_classifier(req: Req, res: Res):
     if np.all(image == 0):
         pred = -1
     else:
+        print("Predicting...")
+        # print(f"Image shape: {image.shape}")
         # # convert the image to tensor
         # img_tensor = torch.tensor(image)
         # # print("img shape: ", img_tensor.shape)
@@ -197,7 +199,7 @@ def predict_image_classifier(req: Req, res: Res):
         except Exception as e:
             print(f"Error in predict: {e}")
             return -1
-        print(f"Predicted class: {pred}")
 
-    res_msg = {"prediction": pred}
+    res_msg = {"prediction": str(pred)}
+    print(f"Predicted class: {pred}")
     return res.build(req.event, res_msg)

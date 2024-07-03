@@ -26,16 +26,21 @@ def sift_feature_extraction(data_loader):
         return kp, d
 
 
-my_data = data.astronaut()
+# my_data = data.astronaut()
 # print(type(my_data))
-img1 = rgb2gray(my_data)
+# img1 = rgb2gray(my_data)
 # Loading the image
-img1 = cv.imread("D:\patora\peter_atef.JPG")
-img2 = cv.imread("D:\patora\photo_2022-02-14_16-32-54.jpg")
-
+img1 = cv.imread("./data/amazon/cifar10/train/airplane/0001.png")
+img2 = cv.imread("./data/amazon/cifar10/train/airplane/0002.png")
+print(type(img1))
+print(img1.shape)
 # Converting image to grayscale
 gray1 = cv.cvtColor(img1, cv.COLOR_BGR2GRAY)
 gray2 = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
+print(type(gray1))
+print(gray1.shape)
+print(max(gray1.flatten()))
+print(min(gray1.flatten()))
 # Applying SIFT detector
 sift = cv.SIFT_create(nfeatures=256)
 kp1, d1 = sift.detectAndCompute(gray1, None)
