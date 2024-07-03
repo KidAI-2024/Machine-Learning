@@ -11,82 +11,82 @@ import pickle
 import os
 
 
-def sift_feature_extraction(data_loader):
-    """_summary_
+# def sift_feature_extraction(data_loader):
+#     """_summary_
 
-    Args:
-        data_loader (_type_): data loader for images to extract features from
-    """
-    for img in data_loader:
-        # Converting image to grayscale
-        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        # Applying SIFT detector
-        sift = cv.SIFT_create()
-        kp, d = sift.detectAndCompute(gray, None)
-        return kp, d
+#     Args:
+#         data_loader (_type_): data loader for images to extract features from
+#     """
+#     for img in data_loader:
+#         # Converting image to grayscale
+#         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+#         # Applying SIFT detector
+#         sift = cv.SIFT_create()
+#         kp, d = sift.detectAndCompute(gray, None)
+#         return kp, d
 
 
-img1 = cv.imread("./data/amazon/cifar10/train/airplane/0001.png")
-img2 = cv.imread("./data/amazon/cifar10/train/airplane/0001.png")
+# img1 = cv.imread("./data/amazon/cifar10/train/airplane/0001.png")
+# img2 = cv.imread("./data/amazon/cifar10/train/airplane/0001.png")
 
-fd1, hog_image1 = hog(
-    img1,
-    orientations=8,
-    pixels_per_cell=(16, 16),
-    cells_per_block=(1, 1),
-    visualize=True,  # to return the image
-    channel_axis=-1,
-)
+# fd1, hog_image1 = hog(
+#     img1,
+#     orientations=8,
+#     pixels_per_cell=(16, 16),
+#     cells_per_block=(1, 1),
+#     visualize=True,  # to return the image
+#     channel_axis=-1,
+# )
 
-print(type(fd1))
-print(fd1)
-print(fd1.shape)
-print(type(hog_image1))
-print(hog_image1.shape)
+# print(type(fd1))
+# print(fd1)
+# print(fd1.shape)
+# print(type(hog_image1))
+# print(hog_image1.shape)
 
-fd2, hog_image2 = hog(
-    img2,
-    orientations=8,
-    pixels_per_cell=(16, 16),
-    cells_per_block=(1, 1),
-    visualize=True,
-    channel_axis=-1,
-    feature_vector=True,
-)
+# fd2, hog_image2 = hog(
+#     img2,
+#     orientations=8,
+#     pixels_per_cell=(16, 16),
+#     cells_per_block=(1, 1),
+#     visualize=True,
+#     channel_axis=-1,
+#     feature_vector=True,
+# )
 
-print(type(fd2))
-print(fd2.shape)
-print(fd2)
-print(type(hog_image2))
-print(hog_image2.shape)
+# print(type(fd2))
+# print(fd2.shape)
+# print(fd2)
+# print(type(hog_image2))
+# print(hog_image2.shape)
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
+# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
 
-ax1.axis("off")
-ax1.imshow(img1, cmap=plt.cm.gray)
-ax1.set_title("Input image")
+# ax1.axis("off")
+# ax1.imshow(img1, cmap=plt.cm.gray)
+# ax1.set_title("Input image")
 
-# Rescale histogram for better display
-hog_image_rescaled = exposure.rescale_intensity(hog_image1, in_range=(0, 10))
+# # Rescale histogram for better display
+# hog_image_rescaled = exposure.rescale_intensity(hog_image1, in_range=(0, 10))
 
-ax2.axis("off")
-ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
-ax2.set_title("Histogram of Oriented Gradients")
+# ax2.axis("off")
+# ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
+# ax2.set_title("Histogram of Oriented Gradients")
+# # plt.show()
+
+# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
+
+# ax1.axis("off")
+# ax1.imshow(img2, cmap=plt.cm.gray)
+# ax1.set_title("Input image")
+
+# # Rescale histogram for better display
+# hog_image_rescaled = exposure.rescale_intensity(hog_image2, in_range=(0, 10))
+
+# ax2.axis("off")
+# ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
+# ax2.set_title("Histogram of Oriented Gradients")
 # plt.show()
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
-
-ax1.axis("off")
-ax1.imshow(img2, cmap=plt.cm.gray)
-ax1.set_title("Input image")
-
-# Rescale histogram for better display
-hog_image_rescaled = exposure.rescale_intensity(hog_image2, in_range=(0, 10))
-
-ax2.axis("off")
-ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
-ax2.set_title("Histogram of Oriented Gradients")
-plt.show()
 
 # my_data = data.astronaut()
 # print(type(my_data))

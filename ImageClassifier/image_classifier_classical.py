@@ -8,6 +8,8 @@ class ImageClassifierClassical:
         num_classes=2,
         in_channels=3,
         img_size=256,
+        feature_extraction_type=0,
+        model_type=0,
     ):
         """Constructor for the ImageClassifierReNet class
 
@@ -43,8 +45,12 @@ class ImageClassifierClassical:
                 tt.ToTensor(),
             ]
         )
-        self.feature_extraction_type = 0  # 0 for SIFT, 1 for HOG, 2 for LBP
-        self.model_type = 0  # 0 for SVM, 1 for Logistic Regression, 2 for Random Forest
+        self.feature_extraction_type = (
+            feature_extraction_type  # 0 for SIFT, 1 for HOG, 2 for LBP
+        )
+        self.model_type = (
+            model_type  # 0 for SVM, 1 for Logistic Regression, 2 for Random Forest
+        )
 
     def read_train_data(self, path, train_precentage=0.8):
         """Preprocess the images
@@ -186,12 +192,20 @@ class ImageClassifierClassical:
             )
 
             self.clf = svm.SVC(
-                decision_function_shape="ovo", random_state=42, max_iter=1000,
+                decision_function_shape="ovo",
+                random_state=42,
+                max_iter=1000,
             )
         elif self.model_type == 1:
-            self.clf = LogisticRegression(random_state=42, max_iter=1000, )
+            self.clf = LogisticRegression(
+                random_state=42,
+                max_iter=1000,
+            )
         elif self.model_type == 2:
-            self.clf = RandomForestClassifier(random_state=42, n_jobs=-1, )
+            self.clf = RandomForestClassifier(
+                random_state=42,
+                n_jobs=-1,
+            )
 
     def read_test_data(self, path):
         """Preprocess the images

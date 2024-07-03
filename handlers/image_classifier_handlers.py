@@ -85,9 +85,18 @@ def train_image_classifier(req: Req, res: Res) -> int:
     print(f"Training image classifier for {epochs} epochs")
     max_lr = float(req.msg["max_lr"])  # the maximum learning rate
     print(f"Training image classifier with max learning rate {max_lr}")
-    # grad_clip = req.msg["grad_clip"]
-    # weight_decay = req.msg["weight_decay"]
-    # opt_func = req.msg["opt_func"]
+    model_category = int(req.msg["model_category"])  # the model category
+    print(f"Training image classifier with model category {model_category}")
+    classical_model_type = int(
+        req.msg["classical_model_type"]
+    )  # the classical model type
+    print(f"Training image classifier with classical model type {classical_model_type}")
+    feature_extraction_type_img = int(
+        req.msg["feature_extraction_type_img"]
+    )  # the feature extraction type for images
+    print(
+        f"Training image classifier with feature extraction type for images {feature_extraction_type_img}"
+    )
     image_classifier.num_classes = num_classes
     image_classifier.feature_extraction_type = 1  # Hog
     image_classifier.model_type = 2  # RandomForest
@@ -132,8 +141,12 @@ def train_image_classifier(req: Req, res: Res) -> int:
     # )  # Currect directory is Machine-Learning
     image_classifier.save(model_path)
     print("Training completed successfully!")
-    # TODO: add training_accuracy, valid_accuracy to res_msg
-    res_msg = {"status": "success", "saved_model_name": saved_model_name}
+    res_msg = {
+        "status": "success",
+        "saved_model_name": saved_model_name,
+        "training_accuracy": training_accuracy,
+        "valid_accuracy": valid_accuracy,
+    }
     return res.build(req.event, res_msg)
 
 
