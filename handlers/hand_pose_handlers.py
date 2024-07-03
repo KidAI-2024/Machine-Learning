@@ -71,6 +71,11 @@ def train_hand_pose(req: Req, res: Res) -> int:
     print(f"Feature extraction type: {feature_extraction_type}")
     selected_features = req.msg["features"].split(",")
     hand_pose_classifier.selected_features_list = selected_features
+    hand_pose_classifier.selected_features_list = (
+        hand_pose_classifier.hand_pose_utils.get_modified_features_list(
+            hand_pose_classifier.selected_features_list
+        )
+    )
     print(f"Selected features: {selected_features}")
     if feature_extraction_type == "mediapipe" and selected_features == [""]:
         res_msg = {
@@ -84,6 +89,7 @@ def train_hand_pose(req: Req, res: Res) -> int:
     print("Extracting features...")
     try:
         features_map = hand_pose_classifier.preprocess(training_data)
+        print(f"features_map: {features_map}")
     except Exception as e:
         print(f"Error in preprocess: {e}")
         res_msg = {
@@ -106,8 +112,21 @@ def train_hand_pose(req: Req, res: Res) -> int:
     )  # Currect directory is Machine-Learning
     hand_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
+    try:
+        feature_importance_graph = hand_pose_classifier.feature_importance_graph()
+    except Exception as e:
+        print(f"Error in feature_importance_graph: {e}")
+        feature_importance_graph = None
+
     print("Training completed successfully!")
-    res_msg = {"status": "success", "saved_model_name": saved_model_name}
+    print(f"Training accuracy: {hand_pose_classifier.training_accuracy}")
+    res_msg = {
+        "status": "success",
+        "saved_model_name": saved_model_name,
+        "training_accuracy": hand_pose_classifier.training_accuracy,
+    }
+    if feature_importance_graph is not None:
+        res_msg["feature_importance_graph"] = feature_importance_graph
     return res.build(req.event, res_msg)
 
 
@@ -150,6 +169,13 @@ def load_hand_pose_model(req: Req, res: Res) -> int:
     model = req.msg["model"]
     feature_extraction_type = req.msg["feature_extraction_type"]
     hand_pose_classifier.selected_features_list = req.msg["features"].split(",")
+
+    hand_pose_classifier.selected_features_list = (
+        hand_pose_classifier.hand_pose_utils.get_modified_features_list(
+            hand_pose_classifier.selected_features_list
+        )
+    )
+
     model_path = os.path.join(path, saved_model_name)
     try:
         hand_pose_classifier.load(model_path)
