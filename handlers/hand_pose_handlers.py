@@ -67,6 +67,7 @@ def train_hand_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
     model = req.msg["model"]
     print(f"Training hand pose model using {model} model")
+    hand_pose_classifier.set_model(model)
     feature_extraction_type = req.msg["feature_extraction_type"]
     print(f"Feature extraction type: {feature_extraction_type}")
     selected_features = req.msg["features"].split(",")
@@ -89,7 +90,7 @@ def train_hand_pose(req: Req, res: Res) -> int:
     print("Extracting features...")
     try:
         features_map = hand_pose_classifier.preprocess(training_data)
-        print(f"features_map: {features_map}")
+        # print(f"features_map: {features_map}")
     except Exception as e:
         print(f"Error in preprocess: {e}")
         res_msg = {
@@ -167,6 +168,8 @@ def load_hand_pose_model(req: Req, res: Res) -> int:
     saved_model_name = req.msg["saved_model_name"]
     model_path = os.path.join(path, saved_model_name)
     model = req.msg["model"]
+    hand_pose_classifier.set_model(model)
+
     feature_extraction_type = req.msg["feature_extraction_type"]
     hand_pose_classifier.selected_features_list = req.msg["features"].split(",")
 
@@ -175,6 +178,7 @@ def load_hand_pose_model(req: Req, res: Res) -> int:
             hand_pose_classifier.selected_features_list
         )
     )
+    print(f"Loading model: {model}")
 
     model_path = os.path.join(path, saved_model_name)
     try:

@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.neighbors import KNeighborsClassifier
 import pickle
 
 # import sklearn
@@ -12,11 +15,29 @@ from camera_feed import CameraFeed
 
 class HandPoseClassifier:
     def __init__(self):
-        self.model = SVC(kernel="linear")
+        self.model = None
         self.hand_pose_utils = HandPoseUtils()
         self.camera = CameraFeed()
         self.selected_features_list = None
         self.training_accuracy = None
+
+    def set_model(self, model_name: str):
+        if model_name == "SVM":
+            self.model = SVC(kernel="linear")
+        elif model_name == "RandomForest":
+            self.model = RandomForestClassifier(
+                n_estimators=100, max_depth=2, random_state=0
+            )
+        elif model_name == "GradientBoosting":
+            self.model = GradientBoostingClassifier(
+                n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0
+            )
+        elif model_name == "KNN":
+            self.model = KNeighborsClassifier(n_neighbors=5)
+
+        else:
+            self.model = SVC(kernel="linear")
+            print(f"Invalid model name: {model_name}, setting model to default SVM")
 
     def preprocess(self, data):
         """Preprocess the data to extract features from the dictionary of images"""
