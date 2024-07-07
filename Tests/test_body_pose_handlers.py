@@ -174,7 +174,7 @@ class TestBodyPoseHandlers:
         # Assert that the result is as expected
         assert result == {"event": event, "status": "failed", "error": "Select Some Features to train the model"}
         print("Train no features test passed")
-
+        
 @pytest.fixture
 def black_image():
     image_rgb = cv2.cvtColor(cv2.imread("./Tests/images/black_image.png"), cv2.COLOR_BGR2RGB)

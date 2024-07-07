@@ -29,8 +29,8 @@ class BodyPoseClassifier:
             self.model = KNeighborsClassifier(n_neighbors=5)
         elif model == "RandomForest":
             self.model = RandomForestClassifier(n_estimators=100)
-        else:
-            self.model = None
+        else: # default to SVM
+            self.model = SVC(kernel="linear")
             
    
     def preprocess(self, data):
