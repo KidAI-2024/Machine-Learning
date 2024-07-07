@@ -4,12 +4,18 @@ import mediapipe as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+class Point:
+        def __init__(self, x, y, z):
+            self.x = x
+            self.y = y
+            self.z = z
 
 class BodyPoseUtils:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose()
         self.mp_drawing = mp.solutions.drawing_utils 
+        self.count = 0
 
     def get_body_landmarks(self, image):
         """Get body landmarks from a single image."""
@@ -154,10 +160,8 @@ class BodyPoseUtils:
     def calculate_distance(self, point1, point2):
         return np.linalg.norm(np.array([point1.x, point1.y, point1.z]) - np.array([point2.x, point2.y, point2.z]))
     
-    def extract_features(self, image):
+    def extract_features(self, landmarks, selected_features=[]):
         """Extract hand pose features from a single image."""
-        # Get hand landmarks.
-        landmarks = self.get_body_landmarks(image).landmark
         # Key points
         l_shoulder = landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value]
         l_elbow = landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value]
@@ -167,50 +171,79 @@ class BodyPoseUtils:
         r_wrist = landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST.value]
         l_hip = landmarks[self.mp_pose.PoseLandmark.LEFT_HIP.value]
         r_hip = landmarks[self.mp_pose.PoseLandmark.RIGHT_HIP.value]
+        l_knee = landmarks[self.mp_pose.PoseLandmark.LEFT_KNEE.value]
+        r_knee = landmarks[self.mp_pose.PoseLandmark.RIGHT_KNEE.value]
+        l_ankle = landmarks[self.mp_pose.PoseLandmark.LEFT_ANKLE.value]
+        r_ankle = landmarks[self.mp_pose.PoseLandmark.RIGHT_ANKLE.value]
+        mid_hip = Point((l_hip.x + r_hip.x) / 2, (l_hip.y + r_hip.y) / 2, (l_hip.z + r_hip.z) / 2)
 
-        # Calculate distances
-        l_dist_shoulder_to_elbow = self.calculate_distance(l_shoulder, l_elbow)
-        l_dist_elbow_to_wrist = self.calculate_distance(l_elbow, l_wrist)
-        l_dist_shoulder_to_wrist = self.calculate_distance(l_shoulder, l_wrist)
-        r_dist_shoulder_to_elbow = self.calculate_distance(r_shoulder, r_elbow)
-        r_dist_elbow_to_wrist = self.calculate_distance(r_elbow, r_wrist)
-        r_dist_shoulder_to_wrist = self.calculate_distance(r_shoulder, r_wrist)
+        features = []
+        # Calculate distances and angles based on selected_features
+        for feature in selected_features:
+            if feature == "left-arm":
+                l_dist_shoulder_to_elbow = self.calculate_distance(l_shoulder, l_elbow)
+                features.append(l_dist_shoulder_to_elbow)
+            elif feature == "left-forearm":
+                l_dist_elbow_to_wrist = self.calculate_distance(l_elbow, l_wrist)
+                features.append(l_dist_elbow_to_wrist)
+            elif feature == "right-arm":
+                r_dist_shoulder_to_elbow = self.calculate_distance(r_shoulder, r_elbow)
+                features.append(r_dist_shoulder_to_elbow)
+            elif feature == "right-forearm":
+                r_dist_elbow_to_wrist = self.calculate_distance(r_elbow, r_wrist)
+                features.append(r_dist_elbow_to_wrist)
+            elif feature == "chest":
+                chest_width = self.calculate_distance(l_shoulder, r_shoulder)
+                features.append(chest_width)
+            elif feature == "left-abs":
+                left_abs = self.calculate_distance(l_shoulder, l_hip)
+                features.append(left_abs)
+            elif feature == "right-abs":
+                right_abs = self.calculate_distance(r_shoulder, r_hip)
+                features.append(right_abs)
+            elif feature == "left-thigh":
+                left_thigh = self.calculate_distance(l_hip, l_knee)
+                features.append(left_thigh)
+            elif feature == "right-thigh":
+                right_thigh = self.calculate_distance(r_hip, r_knee)
+                features.append(right_thigh)
+            elif feature == "left-leg":
+                left_leg = self.calculate_distance(l_knee, l_ankle)
+                features.append(left_leg)
+            elif feature == "right-leg":
+                right_leg = self.calculate_distance(r_knee, r_ankle)
+                features.append(right_leg)
+            elif feature == "left-angle":
+                l_angle_elbow_shoulder_hip = self.angle_between_three_points(l_elbow, l_shoulder, l_hip)
+                features.append(l_angle_elbow_shoulder_hip)
+            elif feature == "right-angle":
+                r_angle_elbow_shoulder_hip = self.angle_between_three_points(r_elbow, r_shoulder, r_hip)
+                features.append(r_angle_elbow_shoulder_hip)
+            elif feature == "left-elbow-angle":
+                l_angle_shoulder_elbow_wrist = self.angle_between_three_points(l_shoulder, l_elbow, l_wrist)
+                features.append(l_angle_shoulder_elbow_wrist)
+            elif feature == "right-elbow-angle":
+                r_angle_shoulder_elbow_wrist = self.angle_between_three_points(r_shoulder, r_elbow, r_wrist)
+                features.append(r_angle_shoulder_elbow_wrist)
+            elif feature == "leg-angle":
+                leg_angle = self.angle_between_three_points(l_knee, mid_hip, r_knee)
+                features.append(leg_angle)
 
-        # Calculate angles between specific landmarks
-        l_angle_shoulder_elbow_wrist = self.angle_between_three_points(l_shoulder, l_elbow, l_wrist)
-        l_angle_elbow_shoulder_hip = self.angle_between_three_points(l_elbow, l_shoulder, l_hip)
-        r_angle_shoulder_elbow_wrist = self.angle_between_three_points(r_shoulder, r_elbow, r_wrist)
-        r_angle_elbow_shoulder_hip = self.angle_between_three_points(r_elbow, r_shoulder, r_hip)
-        
-        # Calculate symmetry
-        symmetry_score = self.calculate_symmetry_score(landmarks)
+        # # Calculate symmetry
+        # symmetry_score = self.calculate_symmetry_score(landmarks)
+        # features.append(symmetry_score)
 
-        # Concatenate all features into one array.
-        features = np.array(
-            [
-                l_angle_elbow_shoulder_hip, 
-                l_angle_shoulder_elbow_wrist, 
-                l_dist_shoulder_to_elbow, 
-                l_dist_elbow_to_wrist, 
-                l_dist_shoulder_to_wrist, 
-                r_angle_shoulder_elbow_wrist, 
-                r_angle_elbow_shoulder_hip, 
-                r_dist_shoulder_to_elbow, 
-                r_dist_elbow_to_wrist, 
-                r_dist_shoulder_to_wrist, 
-                symmetry_score
-            ]
-        )
-        return features
+        return np.array(features)
     
     
-    def get_training_features(self, training_data):
+    def get_training_features(self, training_data, selected_features=[]):
         """Extract hand pose features from the dictionary of training images."""
         features_map = {}
         for class_name, images in training_data.items():
             features_list = []
             for image in images:
-                features = self.extract_features(image)
+                landmarks = self.get_body_landmarks(image).landmark
+                features = self.extract_features(landmarks, selected_features)
                 features_list.append(features)
             features_map[class_name] = features_list
         return features_map

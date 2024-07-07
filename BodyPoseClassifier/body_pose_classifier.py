@@ -1,22 +1,41 @@
 import numpy as np
 
 from sklearn.svm import SVC
+# import knn and random forest
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
 import pickle
 
 # import sklearn
 from .body_pose_utils import BodyPoseUtils
 from camera_feed import CameraFeed
+import io
+import base64
+import matplotlib.pyplot as plt
 
 class BodyPoseClassifier:
     def __init__(self):
         self.model = SVC(kernel="linear")
+        self.feature_extraction_type = "mediapipe"
+        self.selected_features = []
         self.body_pose_utils = BodyPoseUtils()
         self.camera = CameraFeed()
 
+    def SelectModel(self, model):
+        if model == "SVM":
+            self.model = SVC(kernel="linear")
+        elif model == "KNN":
+            self.model = KNeighborsClassifier(n_neighbors=5)
+        elif model == "RandomForest":
+            self.model = RandomForestClassifier(n_estimators=100)
+        else: # default to SVM
+            self.model = SVC(kernel="linear")
+            
    
     def preprocess(self, data):
         """Preprocess the data to extract features from the dictionary of images"""
-        features_map = self.body_pose_utils.get_training_features(data)
+        features_map = self.body_pose_utils.get_training_features(data, self.selected_features)
         return features_map
 
     def preprocess_draw_landmarks(self, image):
@@ -40,19 +59,73 @@ class BodyPoseClassifier:
 
         # Train the model
         self.model.fit(X_train, y_train)
+
+    def feature_importance_graph(self):
+        """Returns the feature importance graph image based on the model's feature importances or coefficients."""
+        feature_importance = None
+        sorted_feature_names = None
+        title = ""
+        print("Model: ", self.model)
+        if hasattr(self.model, 'coef_'):  # Linear SVM
+            feature_importance = np.abs(self.model.coef_[0])  # Take the absolute value of coefficients
+            title = "Feature Importance in Linear SVM"
+        elif isinstance(self.model, RandomForestClassifier):  # Random Forest
+            feature_importance = self.model.feature_importances_
+            title = "Feature Importance in Random Forest"
+        # elif isinstance(self.model, KNeighborsClassifier):  # KNN
+        #     result = permutation_importance(self.model, self.X, self.y, n_repeats=10, random_state=42, n_jobs=-1)
+        #     feature_importance = result.importances_mean
+        #     title = "Feature Importance in KNN (Permutation)"
+        else:
+            print("Model does not have coef_ attribute or feature_importances_. Ensure that the model is a Linear SVM, RandomForest, or KNeighborsClassifier.")
+            return ""
+
+        if feature_importance is not None:
+            # Sort the feature importances
+            sorted_idx = np.argsort(feature_importance)
+            sorted_feature_importance = feature_importance[sorted_idx]
+            sorted_feature_names = np.array(self.selected_features)[sorted_idx]
+
+            plt.figure(figsize=(10, 6))
+            plt.bar(range(len(sorted_feature_importance)), sorted_feature_importance, align='center')
+            plt.xticks(range(len(sorted_feature_importance)), sorted_feature_names, rotation=90)
+            plt.xlabel('Feature Names')
+            plt.ylabel('Feature Importance')
+            plt.title(title)
+            plt.tight_layout()  # Adjusts the plot to ensure everything fits without overlapping
+
+            # Convert plot to bytes
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+            plt.close()  # Close the figure to avoid memory leaks
+
+            # Encode bytes as base64 to be returned as string
+            image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+            return image_base64
+        else:
+            return ""
         
+    def convert_plot_to_image(self, plot):
+        """Converts a plot to an image"""
+        
+    
+
     def predict(self, image):
         """Predict the class of an image"""
         # ignore the image it was all black
         if np.all(image == 0):
-            return -1
-
-        features = self.body_pose_utils.extract_features(image)
-        # features = features[0]
+            return -1, ""
+        
+        # Get hand landmarks.
+        landmarks = self.body_pose_utils.get_body_landmarks(image)
+        preprocessed = self.body_pose_utils.draw_body_landmarks(image, landmarks)
+        features = self.body_pose_utils.extract_features(landmarks.landmark, self.selected_features)
+        
+        
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)
-        # print(f"Predicted class: {prediction[0]}")
-        return prediction[0]
+        return prediction[0], preprocessed
 
     def start_feed(self):
         """Start the camera feed"""
