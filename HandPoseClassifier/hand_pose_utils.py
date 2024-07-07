@@ -256,6 +256,24 @@ class HandPoseUtils:
 
         return width_ratios
 
+    def calculate_base_tip_distances(self, landmarks):
+        if not landmarks:
+            return None
+        finger_tips = [4, 8, 12, 16, 20]
+        finger_bases = [2, 5, 9, 13, 17]
+
+        distances = []
+
+        for i in range(len(finger_tips)):
+            tip = landmarks[0].landmark[finger_tips[i]]
+            base = landmarks[0].landmark[finger_bases[i]]
+            distance = np.linalg.norm(
+                np.array([tip.x, tip.y, tip.z]) - np.array([base.x, base.y, base.z])
+            )
+            distances.append(distance)
+
+        return distances
+
     def extract_features(self, image, selected_features_list=None):
         """Extract hand pose features from a single image."""
         # Get hand landmarks.
@@ -285,9 +303,10 @@ class HandPoseUtils:
 
         # Calculate finger width ratio features.
         finger_width_ratios = self.calculate_finger_width_ratios(landmarks)
+
+        # calculate base tip distances
+        finger_base_tip_distances = self.calculate_base_tip_distances(landmarks)
         features = []
-        addedFingerCurvatures = False
-        addedFingerWidthRatios = False
 
         if selected_features_list:
             for feature in selected_features_list:
@@ -307,15 +326,15 @@ class HandPoseUtils:
                     features.append(palm_center_x)
                 elif feature == "PalmCenterY":
                     features.append(palm_center_y)
-                elif feature == "FingerCurvature1" and not addedFingerCurvatures:
+                elif feature == "FingerCurvature1":
                     features.extend(finger_curvatures)
-                    addedFingerCurvatures = True
-
-                elif feature == "FingerWidthRatio1" and not addedFingerWidthRatios:
+                elif feature == "FingerWidthRatio1":
                     features.extend(finger_width_ratios)
-                    addedFingerWidthRatios = True
+                elif feature == "FingerBaseTipDistances1":
+                    features.extend(finger_base_tip_distances)
                 elif feature == "WidthHeightRatio":
                     features.append(width_height_ratio)
+
         else:
             features = [
                 hand_area,
@@ -328,6 +347,7 @@ class HandPoseUtils:
                 palm_center_x,
                 palm_center_y,
                 *finger_curvatures,
+                *finger_base_tip_distances,
                 *finger_width_ratios,
             ]
         # Concatenate all features into one array.
@@ -362,6 +382,10 @@ class HandPoseUtils:
                 elif feature == "FingerWidthRatio":
                     new_selected_features_list.extend(
                         [f"FingerWidthRatio{i}" for i in range(1, 5)]
+                    )
+                elif feature == "FingerBaseTipDistances":
+                    new_selected_features_list.extend(
+                        [f"FingerBaseTipDistances{i}" for i in range(1, 6)]
                     )
                 if (
                     "PalmWidth" in selected_features_list
