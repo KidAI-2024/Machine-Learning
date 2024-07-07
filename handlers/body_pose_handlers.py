@@ -103,24 +103,6 @@ def train_body_pose(req: Req, res: Res) -> int:
     print("Training completed successfully!")
     return res.build(req.event, res_msg)
 
-@event("load_body_pose_model")
-def load_body_pose_model(req: Req, res: Res) -> int:
-    path = req.msg["path"]
-    saved_model_name = req.msg["saved_model_name"]
-    model = req.msg["model"]
-    feature_extraction_type = req.msg["feature_extraction_type"]
-    body_pose_classifier.selected_features = req.msg["features"].split(",")
-    model_path = os.path.join(path, saved_model_name)
-    print(f"Loading model from {model_path}")
-    try:
-        body_pose_classifier.load(model_path)
-        print(f"Model loaded from {model_path}")
-        res_msg = {"status": "success"}
-    except Exception as e:
-        res_msg = {"status": "failed"}
-    
-    return res.build(req.event, res_msg)
-
 @event("predict_body_pose")
 def predict_body_pose(req: Req, res: Res):
     frame_bytes = req.msg["frame"]
@@ -152,4 +134,24 @@ def predict_body_pose(req: Req, res: Res):
     # print(f"Predicted class: {pred}")
 
     res_msg = {"prediction": pred, "preprocessed_image": preprocess_image_str}
+    return res.build(req.event, res_msg)
+
+
+
+@event("load_body_pose_model")
+def load_body_pose_model(req: Req, res: Res) -> int:
+    path = req.msg["path"]
+    saved_model_name = req.msg["saved_model_name"]
+    model = req.msg["model"]
+    feature_extraction_type = req.msg["feature_extraction_type"]
+    body_pose_classifier.selected_features = req.msg["features"].split(",")
+    model_path = os.path.join(path, saved_model_name)
+    print(f"Loading model from {model_path}")
+    try:
+        body_pose_classifier.load(model_path)
+        print(f"Model loaded from {model_path}")
+        res_msg = {"status": "success"}
+    except Exception as e:
+        res_msg = {"status": "failed"}
+    
     return res.build(req.event, res_msg)
