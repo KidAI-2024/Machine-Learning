@@ -142,11 +142,14 @@ def predict_body_pose(req: Req, res: Res):
     # preprocess_image = body_pose_classifier.preprocess_draw_landmarks(image)
     # preprocess_image_str = utils.image_to_b64string(preprocess_image)
     try:
-        pred = body_pose_classifier.predict(image)
+        pred, preprocessed = body_pose_classifier.predict(image)
+        preprocess_image_str = utils.image_to_b64string(preprocessed)
     except Exception as e:
         print(f"Error in predict: {e}")
         pred = "None"
+        preprocess_image_str = ""
+        
     # print(f"Predicted class: {pred}")
 
-    res_msg = {"prediction": pred}
+    res_msg = {"prediction": pred, "preprocessed_image": preprocess_image_str}
     return res.build(req.event, res_msg)

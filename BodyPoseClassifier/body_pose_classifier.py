@@ -23,14 +23,15 @@ class BodyPoseClassifier:
         self.camera = CameraFeed()
 
     def SelectModel(self, model):
-        if model == "SVC":
+        if model == "SVM":
             self.model = SVC(kernel="linear")
         elif model == "KNN":
             self.model = KNeighborsClassifier(n_neighbors=5)
         elif model == "RandomForest":
             self.model = RandomForestClassifier(n_estimators=100)
-        elif model == "NeuralNetwork":
+        else:
             self.model = None
+            
    
     def preprocess(self, data):
         """Preprocess the data to extract features from the dictionary of images"""
@@ -64,7 +65,7 @@ class BodyPoseClassifier:
         feature_importance = None
         sorted_feature_names = None
         title = ""
-
+        print("Model: ", self.model)
         if hasattr(self.model, 'coef_'):  # Linear SVM
             feature_importance = np.abs(self.model.coef_[0])  # Take the absolute value of coefficients
             title = "Feature Importance in Linear SVM"
@@ -114,14 +115,17 @@ class BodyPoseClassifier:
         """Predict the class of an image"""
         # ignore the image it was all black
         if np.all(image == 0):
-            return -1
-
-        features = self.body_pose_utils.extract_features(image, self.selected_features)
-        # features = features[0]
+            return -1, ""
+        
+        # Get hand landmarks.
+        landmarks = self.body_pose_utils.get_body_landmarks(image)
+        preprocessed = self.body_pose_utils.draw_body_landmarks(image, landmarks)
+        features = self.body_pose_utils.extract_features(landmarks.landmark, self.selected_features)
+        
+        
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)
-        # print(f"Predicted class: {prediction[0]}")
-        return prediction[0]
+        return prediction[0], preprocessed
 
     def start_feed(self):
         """Start the camera feed"""

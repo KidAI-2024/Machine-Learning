@@ -24,7 +24,7 @@ class TestBodyPoseHandlers:
         result = predict_body_pose(req, res)
 
         # Assert that the result is as expected
-        assert result == {"event": event, "prediction": "None"}
+        assert result == {"event": event, "prediction": "None", "preprocessed_image" : ""}
         print("Predict without training test passed")
 
     def test_predict_with_training(self, black_image, mocker):
@@ -32,7 +32,8 @@ class TestBodyPoseHandlers:
         tests the predict function without training the model
         should return a prediction of 0
         """
-        mocker.patch.object(BodyPoseClassifier, "predict").return_value = 0
+        mocker.patch.object(BodyPoseClassifier, "predict").return_value = 0, ""
+        mocker.patch.object(utils, "image_to_b64string").return_value = ""
 
         frame_bytes = black_image
         width = 320
@@ -45,9 +46,9 @@ class TestBodyPoseHandlers:
         res = Res()
         # Call your function
         result = predict_body_pose(req, res)
-
+        print(result)
         # Assert that the result is as expected
-        assert result == {"event": event, "prediction": 0}
+        assert result == {"event": event, "prediction": 0, "preprocessed_image" : ""}
         print("Predict with training test passed")
 
     def test_preprocess_body_pose(self, black_image):
@@ -152,6 +153,27 @@ class TestBodyPoseHandlers:
         assert result == {"event": event, "status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph}
         print("Start train test passed")
 
+
+    def test_train_body_pose_no_features(self, mocker):
+        """
+        tests the train_body_pose function
+        should return a status of failed
+        """
+        path = "C:/Users/username/Documents/Projects/BodyPoseClassifier/models"
+        model = "SVM"
+        feature_extraction_type = "mediapipe"
+        body_pose_classifier.selected_features = []
+        msg = {"path": path, "model": model, "feature_extraction_type": feature_extraction_type, "features": ""}
+        event = "train_body_pose"
+        req = Req()
+        req.msg = msg
+        req.event = event
+        res = Res()
+        result = train_body_pose(req, res)
+    
+        # Assert that the result is as expected
+        assert result == {"event": event, "status": "failed", "error": "Select Some Features to train the model"}
+        print("Train no features test passed")
 
 @pytest.fixture
 def black_image():
