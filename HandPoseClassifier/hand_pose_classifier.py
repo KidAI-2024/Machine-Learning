@@ -133,12 +133,14 @@ class HandPoseClassifier:
             # plt.show()
             # Convert plot to bytes
             buf = io.BytesIO()
-            plt.savefig(buf, format="png")
+            plt.savefig(buf, format="png", dpi=50)
             buf.seek(0)
             plt.close()  # Close the figure to avoid memory leaks
 
             # Encode bytes as base64 to be returned as string
             image_base64 = base64.b64encode(buf.read()).decode("utf-8")
+            # print size of image
+            # print(f"Size of image: {len(image_base64)}")
             return image_base64
 
         else:
