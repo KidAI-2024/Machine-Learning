@@ -219,14 +219,14 @@ class TestSockerServer:
         mock_socket.sendto.assert_called_once_with(mock_response_bytes, mock_addr)
 
     def test_respond_in_chunks_multiple_chunks(self, mocker, socket_server_mock):
-        mock_response_bytes = b"x" * (socket_server_mock.CHUNK_SIZE * 3)
+        mock_response_bytes = b"x" * (socket_server_mock.CHUNK_SIZE * 3 + 1)
         mock_addr = ("localhost", 12345)
 
         mock_socket = mocker.patch.object(socket_server_mock, "socket")
 
         socket_server_mock._respond_in_chunks(mock_response_bytes, mock_addr)
 
-        assert mock_socket.sendto.call_count == 3
+        assert mock_socket.sendto.call_count == 4
 
     def test_respond_in_chunks_socket_error(self, mocker, socket_server_mock):
         mock_response_bytes = b"x" * (socket_server_mock.CHUNK_SIZE - 1)

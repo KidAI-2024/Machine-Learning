@@ -8,7 +8,7 @@ import time
 class HandPoseUtils:
     def __init__(self):
         self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands()
+        self.hands = self.mp_hands.Hands(max_num_hands=1)
         self.mp_drawing = mp.solutions.drawing_utils
 
     def get_hand_landmarks(self, image):
@@ -175,13 +175,22 @@ class HandPoseUtils:
 
         # Define finger joints for curvature calculation.
         joints = [
-            [self.mp_hands.HandLandmark.WRIST, self.mp_hands.HandLandmark.THUMB_CMC],
+            [
+                self.mp_hands.HandLandmark.WRIST,
+                self.mp_hands.HandLandmark.THUMB_CMC,
+            ],
             [
                 self.mp_hands.HandLandmark.THUMB_CMC,
                 self.mp_hands.HandLandmark.THUMB_MCP,
             ],
-            [self.mp_hands.HandLandmark.THUMB_MCP, self.mp_hands.HandLandmark.THUMB_IP],
-            [self.mp_hands.HandLandmark.THUMB_IP, self.mp_hands.HandLandmark.THUMB_TIP],
+            [
+                self.mp_hands.HandLandmark.THUMB_MCP,
+                self.mp_hands.HandLandmark.THUMB_IP,
+            ],
+            [
+                self.mp_hands.HandLandmark.THUMB_IP,
+                self.mp_hands.HandLandmark.THUMB_TIP,
+            ],
             [
                 self.mp_hands.HandLandmark.INDEX_FINGER_MCP,
                 self.mp_hands.HandLandmark.INDEX_FINGER_PIP,
@@ -247,7 +256,25 @@ class HandPoseUtils:
 
         return width_ratios
 
-    def extract_features(self, image):
+    def calculate_base_tip_distances(self, landmarks):
+        if not landmarks:
+            return None
+        finger_tips = [4, 8, 12, 16, 20]
+        finger_bases = [2, 5, 9, 13, 17]
+
+        distances = []
+
+        for i in range(len(finger_tips)):
+            tip = landmarks[0].landmark[finger_tips[i]]
+            base = landmarks[0].landmark[finger_bases[i]]
+            distance = np.linalg.norm(
+                np.array([tip.x, tip.y, tip.z]) - np.array([base.x, base.y, base.z])
+            )
+            distances.append(distance)
+
+        return distances
+
+    def extract_features(self, image, selected_features_list=None):
         """Extract hand pose features from a single image."""
         # Get hand landmarks.
         landmarks = self.get_hand_landmarks(image)
@@ -277,9 +304,39 @@ class HandPoseUtils:
         # Calculate finger width ratio features.
         finger_width_ratios = self.calculate_finger_width_ratios(landmarks)
 
-        # Concatenate all features into one array.
-        features = np.array(
-            [
+        # calculate base tip distances
+        finger_base_tip_distances = self.calculate_base_tip_distances(landmarks)
+        features = []
+
+        if selected_features_list:
+            for feature in selected_features_list:
+                if feature == "HandArea":
+                    features.append(hand_area)
+                elif feature == "HandPerimeter":
+                    features.append(hand_perimeter)
+                elif feature == "ThumbIndexAngle":
+                    features.append(thumb_index_angle_deg)
+                elif feature == "ThumbIndexDistance":
+                    features.append(thumb_index_distance)
+                elif feature == "PalmWidth":
+                    features.append(palm_width)
+                elif feature == "PalmHeight":
+                    features.append(palm_height)
+                elif feature == "PalmCenterX":
+                    features.append(palm_center_x)
+                elif feature == "PalmCenterY":
+                    features.append(palm_center_y)
+                elif feature == "FingerCurvature1":
+                    features.extend(finger_curvatures)
+                elif feature == "FingerWidthRatio1":
+                    features.extend(finger_width_ratios)
+                elif feature == "FingerBaseTipDistances1":
+                    features.extend(finger_base_tip_distances)
+                elif feature == "WidthHeightRatio":
+                    features.append(width_height_ratio)
+
+        else:
+            features = [
                 hand_area,
                 hand_perimeter,
                 thumb_index_angle_deg,
@@ -290,18 +347,60 @@ class HandPoseUtils:
                 palm_center_x,
                 palm_center_y,
                 *finger_curvatures,
+                *finger_base_tip_distances,
                 *finger_width_ratios,
             ]
-        )
+        # Concatenate all features into one array.
+        features = np.array(features)
         return features
 
-    def get_training_features(self, training_data):
+    def get_modified_features_list(self, selected_features_list):
+        if selected_features_list == None:
+            return None
+        new_selected_features_list = []
+        if selected_features_list:
+            for feature in selected_features_list:
+                if feature == "HandArea":
+                    new_selected_features_list.append("HandArea")
+                elif feature == "HandPerimeter":
+                    new_selected_features_list.append("HandPerimeter")
+                elif feature == "ThumbIndexAngle":
+                    new_selected_features_list.append("ThumbIndexAngle")
+                elif feature == "ThumbIndexDistance":
+                    new_selected_features_list.append("ThumbIndexDistance")
+                elif feature == "PalmWidth":
+                    new_selected_features_list.append("PalmWidth")
+                elif feature == "PalmHeight":
+                    new_selected_features_list.append("PalmHeight")
+                elif feature == "PalmCenter":
+                    new_selected_features_list.append("PalmCenterX")
+                    new_selected_features_list.append("PalmCenterY")
+                elif feature == "FingerCurvature":
+                    new_selected_features_list.extend(
+                        [f"FingerCurvature{i}" for i in range(1, 6)]
+                    )
+                elif feature == "FingerWidthRatio":
+                    new_selected_features_list.extend(
+                        [f"FingerWidthRatio{i}" for i in range(1, 5)]
+                    )
+                elif feature == "FingerBaseTipDistances":
+                    new_selected_features_list.extend(
+                        [f"FingerBaseTipDistances{i}" for i in range(1, 6)]
+                    )
+                if (
+                    "PalmWidth" in selected_features_list
+                    and "PalmHeight" in selected_features_list
+                ):
+                    new_selected_features_list.append("WidthHeightRatio")
+            return new_selected_features_list
+
+    def get_training_features(self, training_data, selected_features_list=None):
         """Extract hand pose features from the dictionary of training images."""
         features_map = {}
         for class_name, images in training_data.items():
             features_list = []
             for image in images:
-                features = self.extract_features(image)
+                features = self.extract_features(image, selected_features_list)
                 features_list.append(features)
             features_map[class_name] = features_list
         return features_map
