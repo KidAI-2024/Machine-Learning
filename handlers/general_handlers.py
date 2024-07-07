@@ -23,7 +23,8 @@ def predict_frame(req: Req, res: Res):
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
     pass
 
+
 @event("ping")
-def predict_frame(req: Req, res: Res):
+def ping(req: Req, res: Res):
     res_msg = {"message": "success"}
     return res.build(req.event, res_msg)
