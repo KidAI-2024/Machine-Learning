@@ -168,7 +168,6 @@ def load_hand_pose_model(req: Req, res: Res) -> int:
     saved_model_name = req.msg["saved_model_name"]
     model_path = os.path.join(path, saved_model_name)
     model = req.msg["model"]
-    hand_pose_classifier.set_model(model)
 
     feature_extraction_type = req.msg["feature_extraction_type"]
     hand_pose_classifier.selected_features_list = req.msg["features"].split(",")
