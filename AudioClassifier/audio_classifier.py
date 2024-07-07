@@ -153,16 +153,19 @@ class AudioClassifier:
 
     def predict(self, audio):
         # print("class map",self.class_name_to_index)
-        t1=time.time()
+        # t1=time.time()
         wav_audio = self.audio_utils.convert_to_wav(audio)
-        t2=time.time()
-        prep_audio = self.audio_utils.preprocess_audio(audio)
-        t3=time.time()
+        # t2=time.time()
+        print("after wac")
+        prep_audio = self.audio_utils.preprocess_audio(audio)#here problem
+        print("after prepross")
+        # t3=time.time()
         features = self.extract_features(audio)
-        t4=time.time()
-        print("first time ",t2-t1)
-        print("second time ",t3-t2)
-        print("first time ",t4-t3)
+        print("after extract")
+        # t4=time.time()
+        # print("first time ",t2-t1)
+        # print("second time ",t3-t2)
+        # print("first time ",t4-t3)
         if features is None or features.size == 0:
             raise ValueError("Feature extraction failed. No features to predict.")
         
