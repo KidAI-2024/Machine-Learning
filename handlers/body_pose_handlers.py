@@ -80,8 +80,9 @@ def train_body_pose(req: Req, res: Res) -> int:
         print(f"Error in preprocess: {e}")
         res_msg = {"status": "failed", "error": "Training data contains invalid images"}
         return res.build(req.event, res_msg)
-    print("Training...")
+    print(f"Training {model} Classifier...")
     try:
+        body_pose_classifier.SelectModel(model)
         body_pose_classifier.train(features_map)
     except Exception as e:
         print(f"Error in train: {e}") 
@@ -93,7 +94,11 @@ def train_body_pose(req: Req, res: Res) -> int:
     model_path = os.path.join(path, project_name, saved_model_name) # Currect directory is Machine-Learning
     body_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
-    feature_importance_graph = body_pose_classifier.feature_importance_graph()
+    try:
+        feature_importance_graph = body_pose_classifier.feature_importance_graph()
+    except Exception as e:
+        print(f"Error in feature_importance_graph: {e}")
+        feature_importance_graph = ""
     res_msg = {"status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph}
     print("Training completed successfully!")
     return res.build(req.event, res_msg)
