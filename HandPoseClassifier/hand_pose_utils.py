@@ -8,7 +8,7 @@ import time
 class HandPoseUtils:
     def __init__(self):
         self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands()
+        self.hands = self.mp_hands.Hands(max_num_hands=1)
         self.mp_drawing = mp.solutions.drawing_utils
 
     def get_hand_landmarks(self, image):
