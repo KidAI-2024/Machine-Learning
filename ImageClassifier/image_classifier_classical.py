@@ -292,8 +292,7 @@ class ImageClassifierClassical:
         valid_accuracy = self.model.score(
             np.array(self.bag_of_words_valid), np.array(self.y_valid)
         )
-        # return training_accuracy, valid_accuracy
-        return valid_accuracy
+        return training_accuracy, valid_accuracy
 
     def predict(self, img):
         """Predict the class of the image

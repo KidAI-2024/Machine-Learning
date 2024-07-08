@@ -172,7 +172,8 @@ class ImageClassifierResNet:
             # return training and validation accuracies
             # train_acc = 1 - self.history[-1]["train_loss"]
             # return train_acc, self.history[-1]["val_acc"]
-            return self.history[-1]["val_acc"]
+            # TODO:calc the training accuracy
+            return None, self.history[-1]["val_acc"]
 
     def predict(self, img):
         """Predict the class of the image

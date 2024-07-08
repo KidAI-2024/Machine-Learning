@@ -136,7 +136,6 @@ def train_image_classifier(req: Req, res: Res) -> int:
     project_path = os.path.join(path, project_name)
     print("project_path", project_path)
     model_path = os.path.join(path, project_name, saved_model_name)
-    print("model_path", model_path)
     image_classifier.save(project_path, model_path)
     print(f"Model saved to {model_path}")
     print("Training completed successfully!")
