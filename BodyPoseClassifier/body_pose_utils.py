@@ -160,10 +160,8 @@ class BodyPoseUtils:
     def calculate_distance(self, point1, point2):
         return np.linalg.norm(np.array([point1.x, point1.y, point1.z]) - np.array([point2.x, point2.y, point2.z]))
     
-    def extract_features(self, image, selected_features=[]):
+    def extract_features(self, landmarks, selected_features=[]):
         """Extract hand pose features from a single image."""
-        # Get hand landmarks.
-        landmarks = self.get_body_landmarks(image).landmark
         # Key points
         l_shoulder = landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value]
         l_elbow = landmarks[self.mp_pose.PoseLandmark.LEFT_ELBOW.value]
@@ -244,7 +242,8 @@ class BodyPoseUtils:
         for class_name, images in training_data.items():
             features_list = []
             for image in images:
-                features = self.extract_features(image, selected_features)
+                landmarks = self.get_body_landmarks(image).landmark
+                features = self.extract_features(landmarks, selected_features)
                 features_list.append(features)
             features_map[class_name] = features_list
         return features_map
