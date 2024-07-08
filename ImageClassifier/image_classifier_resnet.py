@@ -16,10 +16,12 @@ class ImageClassifierResNet:
             in_channels (int, optional): The number of input channels for the images. Defaults to 3.
         """
         self.device = get_default_device()
+        print("Device: ", self.device)
         # self.device = torch.device("cpu")
         self.model = None
         self.num_classes = num_classes
         self.in_channels = in_channels
+        self.img_size = img_size
         # print("Device: ", self.device)
         # print("num_classes: ", num_classes)
         self.camera = CameraFeed()
@@ -34,10 +36,10 @@ class ImageClassifierResNet:
             ]
         )
 
-    def create_model(self, img_size):
+    def create_model(self):
         """Create the model"""
         self.model = to_device(
-            ResNet9(self.in_channels, self.num_classes, img_size), self.device
+            ResNet9(self.in_channels, self.num_classes, self.img_size), self.device
         )
         print("model is created")
         return self.model
@@ -117,6 +119,7 @@ class ImageClassifierResNet:
         opt_func=torch.optim.Adam,
         train_dl=None,
         valid_dl=None,
+        decay_lr=False,
     ):
         """Train the model
 
@@ -146,6 +149,7 @@ class ImageClassifierResNet:
             weight_decay=weight_decay,
             opt_func=opt_func,
         )
+        print("Training is done")
         if self.history != []:
             # plot the accuracies and save it
             plot_accuracies(
@@ -165,6 +169,9 @@ class ImageClassifierResNet:
                 save_path=f"{project_path}/epoch_lr.png",
                 save_flag=True,
             )
+            # return training and validation accuracies
+            train_acc = 1 - self.history[-1]["train_loss"]
+            return train_acc, self.history[-1]["val_acc"]
 
     def predict(self, img):
         """Predict the class of the image
@@ -215,39 +222,3 @@ class ImageClassifierResNet:
 
     def print_model(self):
         print("Model")
-
-    @staticmethod
-    def b64string_to_tensor(frame_bytes, width, height, in_channels=3):
-        # Get the image data
-        image_data = base64.b64decode(frame_bytes)
-        # Convert byte data to a PIL Image
-        image = Image.open(io.BytesIO(image_data))
-        # Define the transformations: resize, convert to tensor, normalize
-        transform = tt.Compose(
-            [
-                tt.Resize(
-                    (width, height, in_channels)
-                ),  # Resize to a specific size if needed
-                tt.ToTensor(),  # Convert the image to a tensor
-                # tt.Normalize(
-                #     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                # ),  # Normalize with ImageNet standards
-            ]
-        )
-        # Apply the transformations
-        image_tensor = transform(image)
-
-        # Add a batch dimension (required for input to the model)
-        image_tensor = image_tensor.unsqueeze(0)
-
-        print(image_tensor.shape)  # Should print: torch.Size([1, 3, 320, 180])
-        # Remove the batch dimension
-        image_tensor = image_tensor.squeeze(0)
-
-        # Convert the tensor back to a PIL Image
-        to_pil_image = tt.ToPILImage()
-        image_pil = to_pil_image(image_tensor)
-
-        # Save the image
-        image_pil.save("./image.jpg")
-        return image_tensor

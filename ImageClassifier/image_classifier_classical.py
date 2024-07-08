@@ -175,7 +175,7 @@ class ImageClassifierClassical:
                     self.y_valid.append(label)
         return train_ds, val_ds
 
-    def create_model(self):
+    def create_model(self, img_size=256):
         """Create the model"""
         # Kmeans clustering on all training set
         # print("creating kmeans...")
@@ -241,7 +241,7 @@ class ImageClassifierClassical:
                     vq[feature] = vq[feature] + 1
                 self.bag_of_words_train.append(vq)
         elif self.feature_extraction_type == 1:
-            self.bag_of_words_train = self.hog_train  # TODO: check on this
+            self.bag_of_words_train = self.hog_train
         # Train the multiclass classification model
         print(f"Training model...")
         # Define the parameter grid to search over
@@ -286,7 +286,7 @@ class ImageClassifierClassical:
                     vq[feature] = vq[feature] + 1
                 self.bag_of_words_valid.append(vq)
         elif self.feature_extraction_type == 1:  # hog
-            self.bag_of_words_valid = self.hog_valid  # TODO: check on this
+            self.bag_of_words_valid = self.hog_valid
         # Predict the labels of the validation set
         print("Predicting the labels of the validation set...")
         valid_accuracy = self.model.score(

@@ -1,7 +1,4 @@
-from ImageClassifier.image_classifier_cnn import ImageClassifierCNN
-from ImageClassifier.image_classifier_classical import ImageClassifierClassical
-from ImageClassifier.image_classifier_resnet import ImageClassifierResNet
-
+from ImageClassifier.image_classifier import ImageClassifier
 
 from utils import *
 from decorators import event
@@ -17,8 +14,8 @@ IMG_SIZE = 32
 
 # image_classifier = ImageClassifierCNN(img_size=IMG_SIZE)
 # image_classifier = ImageClassifierResNet(img_size=IMG_SIZE)
-# image_classifier = ImageClassifierLogisticRegression(img_size=IMG_SIZE) #TODO: implement the model and call the functions
-image_classifier = ImageClassifierClassical(img_size=IMG_SIZE)
+
+image_classifier = ImageClassifier(img_size=IMG_SIZE)
 
 
 @event("start_feed_hand_pose")
@@ -98,31 +95,33 @@ def train_image_classifier(req: Req, res: Res) -> int:
         f"Training image classifier with feature extraction type for images {feature_extraction_type_img}"
     )
     image_classifier.num_classes = num_classes
-    image_classifier.feature_extraction_type = 1  # Hog
-    image_classifier.model_type = 2  # RandomForest
-    print(f"Training image classifier with {image_classifier.num_classes} classes")
+    image_classifier.model_category = model_category
+    image_classifier.classical_model_type = classical_model_type
+    image_classifier.feature_extraction_type_img = feature_extraction_type_img
+    image_classifier.epochs = epochs
+    image_classifier.max_lr = max_lr
     try:
+        image_classifier.set_model_category()
         print("Reading data...")
         train_ds, valid_ds = image_classifier.read_train_data(path, 0.9)
         print("Creating model...")
         image_classifier.create_model()
-        # image_classifier.create_model(img_size=IMG_SIZE) #for deeplearning models
     except Exception as e:
         print(f"Error in preprocess: {e}")
         return -1
     try:
         print("Creating data loaders...")
         # PyTorch data loaders
-        # train_dl, valid_dl = image_classifier.get_data_loaders(
-        #     train_ds, valid_ds, BATCH_SIZE, NUM_WORKERS, True
-        # ) #for deeplearning models
+        train_dl, valid_dl = image_classifier.get_data_loaders(
+            train_ds, valid_ds, BATCH_SIZE, NUM_WORKERS, True
+        )
         print("Training...")
         training_accuracy, valid_accuracy = image_classifier.train(
             path,
-            # epochs=epochs, #for deeplearning models
-            # max_lr=max_lr,
-            # train_dl=train_dl,
-            # valid_dl=valid_dl,
+            epochs=epochs,
+            max_lr=max_lr,
+            train_dl=train_dl,
+            valid_dl=valid_dl,
         )
         print(f"Training accuracy: {training_accuracy}")
         print(f"Validation accuracy: {valid_accuracy}")
@@ -132,14 +131,10 @@ def train_image_classifier(req: Req, res: Res) -> int:
     print("Saving model...")
     project_name = path.split("/")[-1]
     saved_model_name = "image_classifier_model.pkl"
-    model_path = os.path.join(
-        path, project_name
-    )  # Currect directory is Machine-Learning
+    project_path = os.path.join(path, project_name)
     print(f"Model saved to {model_path}")
-    # model_path = os.path.join( #deeplearning models
-    #     path, project_name, saved_model_name
-    # )  # Currect directory is Machine-Learning
-    image_classifier.save(model_path)
+    model_path = os.path.join(path, project_name, saved_model_name)
+    image_classifier.save(project_path, model_path)
     print("Training completed successfully!")
     res_msg = {
         "status": "success",
@@ -154,16 +149,19 @@ def train_image_classifier(req: Req, res: Res) -> int:
 def load_image_classifier_model(req: Req, res: Res) -> int:
     path = req.msg["path"]
     saved_model_name = req.msg["saved_model_name"]
-    num_classes = req.msg["num_classes"]
-    # model_path = os.path.join(path, saved_model_name) #deeplearning models
-    model_path = path  # for machine learning models
+    num_classes = int(req.msg["num_classes"])  # the number of classes
+    model_category = int(req.msg["model_category"])  # the model category
+    classical_model_type = int(req.msg["classical_model_type"])
+    feature_extraction_type_img = int(req.msg["feature_extraction_type_img"])
+    model_path = os.path.join(path, saved_model_name)
     print(f"Loading model from {model_path}")
     print(f"Number of classes: {num_classes}")
     try:
-        image_classifier.feature_extraction_type = 1  # Hog
-        image_classifier.model_type = 2  # RandomForest
-        image_classifier.num_classes = int(num_classes)
-        image_classifier.load(model_path, img_size=IMG_SIZE)
+        image_classifier.model_category = model_category
+        image_classifier.classical_model_type = classical_model_type
+        image_classifier.feature_extraction_type_img = feature_extraction_type_img
+        image_classifier.num_classes = num_classes
+        image_classifier.load(path, model_path, img_size=IMG_SIZE)
         print(f"Model loaded from {model_path}")
         res_msg = {"status": "success"}
     except Exception as e:
@@ -195,24 +193,29 @@ def predict_image_classifier(req: Req, res: Res):
         pred = -1
     else:
         print("Predicting...")
-        # print(f"Image shape: {image.shape}")
-        # # convert the image to tensor
-        # img_tensor = torch.tensor(image)
-        # # print("img shape: ", img_tensor.shape)
-        # # Convert to shape [3, 320, 180]
-        # converted_tensor = img_tensor.permute(2, 1, 0)
-        # # print("converted_tensor shape: ", converted_tensor.shape)
-        # # transformed_tensor = image_classifier.transform_v(converted_tensor)
-        # transformed_tensor = torch.nn.functional.interpolate(
-        #     converted_tensor.unsqueeze(0),
-        #     size=(IMG_SIZE, IMG_SIZE),
-        #     # size=(32, 32),
-        #     mode="bilinear",
-        #     align_corners=False,
-        # )
-        # transformed_tensor = transformed_tensor.squeeze(0)
+        print(f"Image shape: {image.shape}")
+        # convert the image to tensor
+        img_tensor = torch.tensor(image)
+        # print("img shape: ", img_tensor.shape)
+        # Convert to shape [3, 320, 180]
+        converted_tensor = img_tensor.permute(2, 1, 0)
+        # print("converted_tensor shape: ", converted_tensor.shape)
+        # transformed_tensor = image_classifier.transform_v(converted_tensor)
+        transformed_tensor = torch.nn.functional.interpolate(
+            converted_tensor.unsqueeze(0),
+            size=(IMG_SIZE, IMG_SIZE),
+            # size=(32, 32),
+            mode="bilinear",
+            align_corners=False,
+        )
+        transformed_tensor = transformed_tensor.squeeze(0)
         try:
-            pred = image_classifier.predict(image)
+            if image_classifier.model_category == 0:
+                pred = image_classifier.predict(image)  # classical model
+            else:
+                pred = image_classifier.predict(
+                    transformed_tensor
+                )  # deep learning model
         except Exception as e:
             print(f"Error in predict: {e}")
             return -1

@@ -180,6 +180,12 @@ class ResNet9(ImageClassificationBaseResnet):
             conv_block(512, 512),  # 32*32*512
             conv_block(512, 512),  # 32*32*512
         )
+        # self.conv5 = conv_block(512, 1024, pool=True)  # 16*16*1024
+        # self.conv6 = conv_block(1024, 2048, pool=True)  # 8*8*2048
+        # self.res3 = nn.Sequential(
+        #     conv_block(2048, 2048),  # 8*8*2048
+        #     conv_block(2048, 2048),  # 8*8*2048
+        # )
         # print("ResNet9 model created 2")
         self.classifier = nn.Sequential(
             nn.MaxPool2d(4),  # 4*4*512
@@ -204,6 +210,12 @@ class ResNet9(ImageClassificationBaseResnet):
         out = self.conv4(out)
         # print("conv4 out", out.shape)
         out = self.res2(out) + out
+        # TODO: check on the new resnet model
+        # out = self.conv5(out)
+        # print("conv5 out", out.shape)
+        # out = self.conv6(out)
+        # print("conv6 out", out.shape)
+        # out = self.res3(out) + out
         # print("res2 out", out.shape)
         out = self.classifier(out)
         # print("classifier out", out.shape)
@@ -465,3 +477,32 @@ class LogisticRegressionModel(nn.Module):
                 epoch, result["train_loss"], result["val_loss"], result["val_acc"]
             )
         )
+
+
+def b64string_to_tensor(frame_bytes, width, height, in_channels=3):
+    # Get the image data
+    image_data = base64.b64decode(frame_bytes)
+    # Convert byte data to a PIL Image
+    image = Image.open(io.BytesIO(image_data))
+    # Define the transformations: resize, convert to tensor, normalize
+    transform = tt.Compose(
+        [
+            tt.Resize(
+                (width, height, in_channels)
+            ),  # Resize to a specific size if needed
+            tt.ToTensor(),  # Convert the image to a tensor
+            # tt.Normalize(
+            #     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+            # ),  # Normalize with ImageNet standards
+        ]
+    )
+    # Apply the transformations
+    image_tensor = transform(image)
+
+    # Add a batch dimension (required for input to the model)
+    image_tensor = image_tensor.unsqueeze(0)
+
+    print(image_tensor.shape)  # Should print: torch.Size([1, 3, 320, 180])
+    # Remove the batch dimension
+    image_tensor = image_tensor.squeeze(0)
+    return image_tensor

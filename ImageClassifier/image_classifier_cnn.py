@@ -16,6 +16,8 @@ class ImageClassifierCNN:
             in_channels (int, optional): The number of input channels for the images. Defaults to 3.
         """
         self.device = get_default_device()
+        print("Device: ", self.device)
+
         # self.device = torch.device("cpu")
         self.model = None
         self.num_classes = num_classes
@@ -24,6 +26,7 @@ class ImageClassifierCNN:
         # print("num_classes: ", num_classes)
         self.train_size = 0
         self.valid_size = 0
+        self.img_size = img_size
         self.camera = CameraFeed()
         self.transform_t = tt.Compose(
             [
@@ -36,10 +39,11 @@ class ImageClassifierCNN:
             ]
         )
 
-    def create_model(self, img_size):
+    def create_model(self):
         """Create the model"""
         self.model = to_device(
-            Cifar10CnnModel(self.in_channels, self.num_classes, img_size), self.device
+            Cifar10CnnModel(self.in_channels, self.num_classes, self.img_size),
+            self.device,
         )
         print("model is created")
         return self.model
@@ -235,39 +239,3 @@ class ImageClassifierCNN:
 
     def print_model(self):
         print("Model")
-
-    @staticmethod
-    def b64string_to_tensor(frame_bytes, width, height, in_channels=3):
-        # Get the image data
-        image_data = base64.b64decode(frame_bytes)
-        # Convert byte data to a PIL Image
-        image = Image.open(io.BytesIO(image_data))
-        # Define the transformations: resize, convert to tensor, normalize
-        transform = tt.Compose(
-            [
-                tt.Resize(
-                    (width, height, in_channels)
-                ),  # Resize to a specific size if needed
-                tt.ToTensor(),  # Convert the image to a tensor
-                # tt.Normalize(
-                #     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                # ),  # Normalize with ImageNet standards
-            ]
-        )
-        # Apply the transformations
-        image_tensor = transform(image)
-
-        # Add a batch dimension (required for input to the model)
-        image_tensor = image_tensor.unsqueeze(0)
-
-        print(image_tensor.shape)  # Should print: torch.Size([1, 3, 320, 180])
-        # Remove the batch dimension
-        image_tensor = image_tensor.squeeze(0)
-
-        # Convert the tensor back to a PIL Image
-        to_pil_image = tt.ToPILImage()
-        image_pil = to_pil_image(image_tensor)
-
-        # Save the image
-        image_pil.save("./image.jpg")
-        return image_tensor
