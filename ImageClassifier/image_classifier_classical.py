@@ -20,7 +20,7 @@ class ImageClassifierClassical:
         self.camera = CameraFeed()
         self.n_clusters = num_classes
         self.filename1 = "kmeans_model.sav"
-        self.filename2 = "svm_model.sav"
+        self.filename2 = "clf_model.sav"
         self.sift = cv2.SIFT_create()
         self.descriptors_t = []
         self.descriptors_v = []
@@ -292,7 +292,8 @@ class ImageClassifierClassical:
         valid_accuracy = self.model.score(
             np.array(self.bag_of_words_valid), np.array(self.y_valid)
         )
-        return training_accuracy, valid_accuracy
+        # return training_accuracy, valid_accuracy
+        return valid_accuracy
 
     def predict(self, img):
         """Predict the class of the image

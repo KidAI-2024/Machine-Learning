@@ -123,23 +123,27 @@ def train_image_classifier(req: Req, res: Res) -> int:
             train_dl=train_dl,
             valid_dl=valid_dl,
         )
-        print(f"Training accuracy: {training_accuracy}")
-        print(f"Validation accuracy: {valid_accuracy}")
+        if training_accuracy is not None and valid_accuracy is not None:
+            print(f"Training accuracy: {training_accuracy}")
+            print(f"Validation accuracy: {valid_accuracy}")
     except Exception as e:
         print(f"Error in train: {e}")
         return -1
     print("Saving model...")
+    print("Path:", path)
     project_name = path.split("/")[-1]
     saved_model_name = "image_classifier_model.pkl"
     project_path = os.path.join(path, project_name)
-    print(f"Model saved to {model_path}")
+    print("project_path", project_path)
     model_path = os.path.join(path, project_name, saved_model_name)
+    print("model_path", model_path)
     image_classifier.save(project_path, model_path)
+    print(f"Model saved to {model_path}")
     print("Training completed successfully!")
     res_msg = {
         "status": "success",
         "saved_model_name": saved_model_name,
-        "training_accuracy": training_accuracy,
+        # "training_accuracy": training_accuracy,
         "valid_accuracy": valid_accuracy,
     }
     return res.build(req.event, res_msg)

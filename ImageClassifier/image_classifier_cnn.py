@@ -189,6 +189,8 @@ class ImageClassifierCNN:
                     save_flag=True,
                 )
                 print("learning rates plot saved")
+                # return training and validation accuracies
+            return self.history[-1]["val_acc"]
 
     def predict(self, img):
         """Predict the class of the image

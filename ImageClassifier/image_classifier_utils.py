@@ -233,6 +233,13 @@ def evaluate(model, val_loader):
     return model.validation_epoch_end(outputs)
 
 
+@torch.no_grad()
+def evaluate_train(model, val_loader):
+    model.eval()
+    outputs = [model.validation_step(batch) for batch in val_loader]
+    return model.validation_epoch_end(outputs)
+
+
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group["lr"]
