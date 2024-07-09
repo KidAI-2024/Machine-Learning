@@ -61,8 +61,6 @@ class BodyPoseClassifier:
         # Train the model
         self.model.fit(X_train, y_train)
         self.training_accuracy = self.model.score(X_train, y_train)
-        # self.training_accuracy = self.training_accuracy * 100 and only 1 decimal point
-        self.training_accuracy = round(self.training_accuracy * 100, 1)
 
     def feature_importance_graph(self):
         """Returns the feature importance graph image based on the model's feature importances or coefficients."""
