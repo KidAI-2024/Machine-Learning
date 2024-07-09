@@ -164,6 +164,7 @@ def load_image_classifier_model(req: Req, res: Res) -> int:
         image_classifier.classical_model_type = classical_model_type
         image_classifier.feature_extraction_type_img = feature_extraction_type_img
         image_classifier.num_classes = num_classes
+        image_classifier.set_model_category()
         image_classifier.load(path, model_path, img_size=IMG_SIZE)
         print(f"Model loaded from {model_path}")
         res_msg = {"status": "success"}
