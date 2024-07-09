@@ -99,7 +99,7 @@ def train_body_pose(req: Req, res: Res) -> int:
     except Exception as e:
         print(f"Error in feature_importance_graph: {e}")
         feature_importance_graph = ""
-    res_msg = {"status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph}
+    res_msg = {"status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph, "training_accuracy" : body_pose_classifier.training_accuracy}
     print("Training completed successfully!")
     return res.build(req.event, res_msg)
 
