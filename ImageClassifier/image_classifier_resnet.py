@@ -15,11 +15,13 @@ class ImageClassifierResNet:
             num_classes (int, optional): The number of classes you want predict. Defaults to 2.
             in_channels (int, optional): The number of input channels for the images. Defaults to 3.
         """
-        # self.device = get_default_device()
-        self.device = torch.device("cpu")
+        self.device = get_default_device()
+        print("Device: ", self.device)
+        # self.device = torch.device("cpu")
         self.model = None
         self.num_classes = num_classes
         self.in_channels = in_channels
+        self.img_size = img_size
         # print("Device: ", self.device)
         # print("num_classes: ", num_classes)
         self.camera = CameraFeed()
@@ -34,15 +36,15 @@ class ImageClassifierResNet:
             ]
         )
 
-    def create_model(self, img_size):
+    def create_model(self):
         """Create the model"""
         self.model = to_device(
-            ResNet9(self.in_channels, self.num_classes, img_size), self.device
+            ResNet9(self.in_channels, self.num_classes, self.img_size), self.device
         )
         print("model is created")
         return self.model
 
-    def read_and_preprocess_train(self, path):
+    def read_train_data(self, path, train_precentage=0.8):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
@@ -50,15 +52,20 @@ class ImageClassifierResNet:
         Args:
             images (ImageFolder): The images to preprocess
         """
-
         # Data transforms (data augmentation)
-
         # PyTorch datasets
-        train_ds = ImageFolder(path, self.transform_t)
+        dataset = ImageFolder(path, self.transform_t)
+        self.train_size = int(train_precentage * len(dataset))
+        self.valid_size = len(dataset) - self.train_size
         # train_ds = ImageFolder(path + "/train", train_tfms)
-        return train_ds
+        if self.valid_size == 0:
+            train_ds = dataset
+            val_ds = None
+        else:
+            train_ds, val_ds = random_split(dataset, [self.train_size, self.valid_size])
+        return train_ds, val_ds
 
-    def read_and_preprocess_test(self, path):
+    def read_test_data(self, path):
         """Preprocess the images
         read the images from the path and preprocess them by applying the following transformations:\n
             1.normalization by calculating the mean and standard deviation of each channel in the dataset\n
@@ -90,12 +97,14 @@ class ImageClassifierResNet:
                 num_workers=num_workers,
                 pin_memory=pin_memory,
             )
+            train_dl = DeviceDataLoader(train_dl, self.device)
         else:
             train_dl = None
         if valid_ds is not None:
             valid_dl = DataLoader(
                 valid_ds, batch_size * 2, num_workers=num_workers, pin_memory=pin_memory
             )
+            valid_dl = DeviceDataLoader(valid_dl, self.device)
         else:
             valid_dl = None
         return train_dl, valid_dl
@@ -110,6 +119,7 @@ class ImageClassifierResNet:
         opt_func=torch.optim.Adam,
         train_dl=None,
         valid_dl=None,
+        decay_lr=False,
     ):
         """Train the model
 
@@ -139,25 +149,31 @@ class ImageClassifierResNet:
             weight_decay=weight_decay,
             opt_func=opt_func,
         )
+        print("Training is done")
         if self.history != []:
             # plot the accuracies and save it
             plot_accuracies(
                 self.history,
-                save_path=f"{project_path}/renet_accuracy.png",
+                save_path=f"{project_path}/epoch_accuracy.png",
                 save_flag=True,
             )
             # plot losses and save it
             plot_losses(
                 self.history,
-                save_path=f"{project_path}/renet_loss.png",
+                save_path=f"{project_path}/epoch_loss.png",
                 save_flag=True,
             )
             # plot learning rates and save it
             plot_lrs(
                 self.history,
-                save_path=f"{project_path}/renet_lr.png",
+                save_path=f"{project_path}/epoch_lr.png",
                 save_flag=True,
             )
+            # return training and validation accuracies
+            # train_acc = 1 - self.history[-1]["train_loss"]
+            # return train_acc, self.history[-1]["val_acc"]
+            # TODO:calc the training accuracy
+            return None, self.history[-1]["val_acc"]
 
     def predict(self, img):
         """Predict the class of the image
@@ -208,39 +224,3 @@ class ImageClassifierResNet:
 
     def print_model(self):
         print("Model")
-
-    @staticmethod
-    def b64string_to_tensor(frame_bytes, width, height, in_channels=3):
-        # Get the image data
-        image_data = base64.b64decode(frame_bytes)
-        # Convert byte data to a PIL Image
-        image = Image.open(io.BytesIO(image_data))
-        # Define the transformations: resize, convert to tensor, normalize
-        transform = tt.Compose(
-            [
-                tt.Resize(
-                    (width, height, in_channels)
-                ),  # Resize to a specific size if needed
-                tt.ToTensor(),  # Convert the image to a tensor
-                # tt.Normalize(
-                #     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                # ),  # Normalize with ImageNet standards
-            ]
-        )
-        # Apply the transformations
-        image_tensor = transform(image)
-
-        # Add a batch dimension (required for input to the model)
-        image_tensor = image_tensor.unsqueeze(0)
-
-        print(image_tensor.shape)  # Should print: torch.Size([1, 3, 320, 180])
-        # Remove the batch dimension
-        image_tensor = image_tensor.squeeze(0)
-
-        # Convert the tensor back to a PIL Image
-        to_pil_image = tt.ToPILImage()
-        image_pil = to_pil_image(image_tensor)
-
-        # Save the image
-        image_pil.save("./image.jpg")
-        return image_tensor
