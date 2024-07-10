@@ -75,6 +75,17 @@ class ImageClassifierClassical:
             val_ds = None
         else:
             train_ds, val_ds = random_split(dataset, [self.train_size, self.valid_size])
+            # save val_ds to teh disk
+            val_dir = os.path.join(path, "test")
+            os.makedirs(val_dir, exist_ok=True)
+            for idx in val_ds.indices:
+                img_path, label = dataset.imgs[idx]
+                class_name = dataset.classes[label]
+                class_dir = os.path.join(val_dir, class_name)
+                os.makedirs(class_dir, exist_ok=True)
+                shutil.copy(
+                    img_path, os.path.join(class_dir, os.path.basename(img_path))
+                )
         # preprocess the training set
         if self.feature_extraction_type == 0:
             for img, label in train_ds:
@@ -354,10 +365,12 @@ class ImageClassifierClassical:
         else:
             self.bag_of_words_valid = self.lbp_valid
         # Predict the labels of the validation set
+        valid_accuracy = 0
         print("Predicting the labels of the validation set...")
-        valid_accuracy = self.model.score(
-            np.array(self.bag_of_words_valid), np.array(self.y_valid)
-        )
+        if len(self.y_valid) != 0:
+            valid_accuracy = self.model.score(
+                np.array(self.bag_of_words_valid), np.array(self.y_valid)
+            )
         return training_accuracy, valid_accuracy
 
     def predict(self, img):
