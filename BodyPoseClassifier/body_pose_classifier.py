@@ -1,6 +1,10 @@
 import numpy as np
 
 from sklearn.svm import SVC
+# import knn and random forest
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
 import pickle
 
 # import sklearn
@@ -17,12 +21,18 @@ class BodyPoseClassifier:
         self.selected_features = []
         self.body_pose_utils = BodyPoseUtils()
         self.camera = CameraFeed()
+        self.training_accuracy = 0.0
 
     def SelectModel(self, model):
-        if model == "SVC":
+        if model == "SVM":
             self.model = SVC(kernel="linear")
-        elif model == "NeuralNetwork":
-            self.model = None
+        elif model == "KNN":
+            self.model = KNeighborsClassifier(n_neighbors=5)
+        elif model == "RandomForest":
+            self.model = RandomForestClassifier(n_estimators=100)
+        else: # default to SVM
+            self.model = SVC(kernel="linear")
+            
    
     def preprocess(self, data):
         """Preprocess the data to extract features from the dictionary of images"""
@@ -50,24 +60,42 @@ class BodyPoseClassifier:
 
         # Train the model
         self.model.fit(X_train, y_train)
+        self.training_accuracy = self.model.score(X_train, y_train)
 
     def feature_importance_graph(self):
-        """Returns the feature importance graph image based on the linear SVM coefficients"""
-        if hasattr(self.model, 'coef_'):
+        """Returns the feature importance graph image based on the model's feature importances or coefficients."""
+        feature_importance = None
+        sorted_feature_names = None
+        title = ""
+        print("Model: ", self.model)
+        if hasattr(self.model, 'coef_'):  # Linear SVM
             feature_importance = np.abs(self.model.coef_[0])  # Take the absolute value of coefficients
+            title = "Feature Importance in Linear SVM"
+        elif isinstance(self.model, RandomForestClassifier):  # Random Forest
+            feature_importance = self.model.feature_importances_
+            title = "Feature Importance in Random Forest"
+        # elif isinstance(self.model, KNeighborsClassifier):  # KNN
+        #     result = permutation_importance(self.model, self.X, self.y, n_repeats=10, random_state=42, n_jobs=-1)
+        #     feature_importance = result.importances_mean
+        #     title = "Feature Importance in KNN (Permutation)"
+        else:
+            print("Model does not have coef_ attribute or feature_importances_. Ensure that the model is a Linear SVM, RandomForest, or KNeighborsClassifier.")
+            return ""
+
+        if feature_importance is not None:
             # Sort the feature importances
             sorted_idx = np.argsort(feature_importance)
             sorted_feature_importance = feature_importance[sorted_idx]
             sorted_feature_names = np.array(self.selected_features)[sorted_idx]
-            
+
             plt.figure(figsize=(10, 6))
-            plt.bar(range(len(feature_importance)), sorted_feature_importance, align='center')
-            plt.xticks(range(len(feature_importance)), sorted_feature_names, rotation=90)
+            plt.bar(range(len(sorted_feature_importance)), sorted_feature_importance, align='center')
+            plt.xticks(range(len(sorted_feature_importance)), sorted_feature_names, rotation=90)
             plt.xlabel('Feature Names')
-            plt.ylabel('Absolute Feature Importance')
-            plt.title('Feature Importance in Linear SVM')
+            plt.ylabel('Feature Importance')
+            plt.title(title)
             plt.tight_layout()  # Adjusts the plot to ensure everything fits without overlapping
-            # plt.show()
+
             # Convert plot to bytes
             buf = io.BytesIO()
             plt.savefig(buf, format='png')
@@ -77,10 +105,9 @@ class BodyPoseClassifier:
             # Encode bytes as base64 to be returned as string
             image_base64 = base64.b64encode(buf.read()).decode('utf-8')
             return image_base64
-
         else:
-            print("Model does not have coef_ attribute. Ensure that the model is a linear SVM.")
-
+            return ""
+        
     def convert_plot_to_image(self, plot):
         """Converts a plot to an image"""
         
@@ -90,14 +117,17 @@ class BodyPoseClassifier:
         """Predict the class of an image"""
         # ignore the image it was all black
         if np.all(image == 0):
-            return -1
-
-        features = self.body_pose_utils.extract_features(image, self.selected_features)
-        # features = features[0]
+            return -1, ""
+        
+        # Get hand landmarks.
+        landmarks = self.body_pose_utils.get_body_landmarks(image)
+        preprocessed = self.body_pose_utils.draw_body_landmarks(image, landmarks)
+        features = self.body_pose_utils.extract_features(landmarks.landmark, self.selected_features)
+        
+        
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)
-        # print(f"Predicted class: {prediction[0]}")
-        return prediction[0]
+        return prediction[0], preprocessed
 
     def start_feed(self):
         """Start the camera feed"""

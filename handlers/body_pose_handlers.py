@@ -80,8 +80,9 @@ def train_body_pose(req: Req, res: Res) -> int:
         print(f"Error in preprocess: {e}")
         res_msg = {"status": "failed", "error": "Training data contains invalid images"}
         return res.build(req.event, res_msg)
-    print("Training...")
+    print(f"Training {model} Classifier...")
     try:
+        body_pose_classifier.SelectModel(model)
         body_pose_classifier.train(features_map)
     except Exception as e:
         print(f"Error in train: {e}") 
@@ -93,27 +94,13 @@ def train_body_pose(req: Req, res: Res) -> int:
     model_path = os.path.join(path, project_name, saved_model_name) # Currect directory is Machine-Learning
     body_pose_classifier.save(model_path)
     print(f"Model saved to {model_path}")
-    feature_importance_graph = body_pose_classifier.feature_importance_graph()
-    res_msg = {"status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph}
-    print("Training completed successfully!")
-    return res.build(req.event, res_msg)
-
-@event("load_body_pose_model")
-def load_body_pose_model(req: Req, res: Res) -> int:
-    path = req.msg["path"]
-    saved_model_name = req.msg["saved_model_name"]
-    model = req.msg["model"]
-    feature_extraction_type = req.msg["feature_extraction_type"]
-    body_pose_classifier.selected_features = req.msg["features"].split(",")
-    model_path = os.path.join(path, saved_model_name)
-    print(f"Loading model from {model_path}")
     try:
-        body_pose_classifier.load(model_path)
-        print(f"Model loaded from {model_path}")
-        res_msg = {"status": "success"}
+        feature_importance_graph = body_pose_classifier.feature_importance_graph()
     except Exception as e:
-        res_msg = {"status": "failed"}
-    
+        print(f"Error in feature_importance_graph: {e}")
+        feature_importance_graph = ""
+    res_msg = {"status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph, "training_accuracy" : body_pose_classifier.training_accuracy}
+    print("Training completed successfully!")
     return res.build(req.event, res_msg)
 
 @event("predict_body_pose")
@@ -137,11 +124,34 @@ def predict_body_pose(req: Req, res: Res):
     # preprocess_image = body_pose_classifier.preprocess_draw_landmarks(image)
     # preprocess_image_str = utils.image_to_b64string(preprocess_image)
     try:
-        pred = body_pose_classifier.predict(image)
+        pred, preprocessed = body_pose_classifier.predict(image)
+        preprocess_image_str = utils.image_to_b64string(preprocessed)
     except Exception as e:
         print(f"Error in predict: {e}")
         pred = "None"
+        preprocess_image_str = ""
+        
     # print(f"Predicted class: {pred}")
 
-    res_msg = {"prediction": pred}
+    res_msg = {"prediction": pred, "preprocessed_image": preprocess_image_str}
+    return res.build(req.event, res_msg)
+
+
+
+@event("load_body_pose_model")
+def load_body_pose_model(req: Req, res: Res) -> int:
+    path = req.msg["path"]
+    saved_model_name = req.msg["saved_model_name"]
+    model = req.msg["model"]
+    feature_extraction_type = req.msg["feature_extraction_type"]
+    body_pose_classifier.selected_features = req.msg["features"].split(",")
+    model_path = os.path.join(path, saved_model_name)
+    print(f"Loading model from {model_path}")
+    try:
+        body_pose_classifier.load(model_path)
+        print(f"Model loaded from {model_path}")
+        res_msg = {"status": "success"}
+    except Exception as e:
+        res_msg = {"status": "failed"}
+    
     return res.build(req.event, res_msg)

@@ -22,3 +22,9 @@ def predict_frame(req: Req, res: Res):
     image = utils.b64string_to_image(frame_bytes, (height, width, 3))
     # cv2.imwrite(f"./frames_test/frame_{time.time()}.png", image)
     pass
+
+
+@event("ping")
+def ping(req: Req, res: Res):
+    res_msg = {"message": "success"}
+    return res.build(req.event, res_msg)

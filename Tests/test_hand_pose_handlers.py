@@ -75,9 +75,18 @@ class TestHandPoseHandlers:
         mock the load function avoid raising an exception for not finding the path
         """
         mocker.patch.object(HandPoseClassifier, "load")
-        project_name = "test_project"
+        path = "C:/Users/username/Documents/Projects/HandPoseClassifier/models"
         saved_model_name = "hand_pose_model.pkl"
-        msg = {"project_name": project_name, "saved_model_name": saved_model_name}
+        model = "SVM"
+        feature_extraction_type = "mediapipe"
+        hand_pose_classifier.selected_features_list = ["feature1", "feature2"]
+        msg = {
+            "path": path,
+            "saved_model_name": saved_model_name,
+            "model": model,
+            "feature_extraction_type": feature_extraction_type,
+            "features": "feature1,feature2",
+        }
         event = "load_hand_pose_model"
         req = Req()
         req.msg = msg
@@ -95,9 +104,18 @@ class TestHandPoseHandlers:
         """
         mock the load function avoid raising an exception for not finding the path
         """
-        project_name = "test_project"
+        path = "C:/Users/username/Documents/Projects/HandPoseClassifier/models"
         saved_model_name = "hand_pose_model.pkl"
-        msg = {"project_name": project_name, "saved_model_name": saved_model_name}
+        model = "SVM"
+        feature_extraction_type = "mediapipe"
+        hand_pose_classifier.selected_features_list = ["feature1", "feature2"]
+        msg = {
+            "path": path,
+            "saved_model_name": saved_model_name,
+            "model": model,
+            "feature_extraction_type": feature_extraction_type,
+            "features": "feature1,feature2",
+        }
         event = "load_hand_pose_model"
         req = Req()
         req.msg = msg
