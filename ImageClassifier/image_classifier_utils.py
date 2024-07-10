@@ -33,6 +33,7 @@ import json
 from skimage.feature import hog
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from skimage.feature import local_binary_pattern
 
 matplotlib.rcParams["figure.facecolor"] = "#ffffff"
 

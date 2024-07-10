@@ -29,7 +29,6 @@ class ImageClassifierClassical:
         self.y_train = []
         self.bag_of_words_valid = []
         self.y_valid = []
-        # self.device = get_default_device()
         self.hog_train = []
         self.hog_valid = []
         self.model = None
@@ -51,6 +50,13 @@ class ImageClassifierClassical:
         self.model_type = (
             model_type  # 0 for SVM, 1 for Logistic Regression, 2 for Random Forest
         )
+        # Parameters for LBP
+        self.radius = 3  # Radius of circle
+        self.n_points = (
+            8 * self.radius
+        )  # Number of points to consider around the circle
+        self.lbp_train = []
+        self.lbp_valid = []
 
     def read_train_data(self, path, train_precentage=0.8):
         """Preprocess the images
@@ -125,6 +131,35 @@ class ImageClassifierClassical:
                     ),
                 )
                 self.y_train.append(label)
+        else:  # self.feature_extraction_type == 2 => LBP
+            print("LBP")
+            for img, label in train_ds:
+                # print("img shape", img.shape)
+                # convert tensor to numpy array
+                img = np.array(img)
+                # convert the shape to [32,32,3] instead of [3,32,32]
+                img = np.transpose(img, (1, 2, 0))
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                # print("img shape", img.shape)
+                gray = np.uint8(
+                    255
+                    * (gray - np.min(gray))
+                    / (np.max(gray) - np.min(gray) + np.finfo(float).eps)
+                )
+                # LBP features
+                # Calculate LBP
+                lbp_image = local_binary_pattern(
+                    gray, self.n_points, self.radius, method="uniform"
+                )
+                # Compute the histogram of the LBP
+                n_bins = int(lbp_image.max() + 1)
+                # print("n_bins:", n_bins)
+                hist, _ = np.histogram(
+                    lbp_image, bins=n_bins, range=(0, n_bins), density=True
+                )
+                self.lbp_train.append(hist)
+                self.y_train.append(label)
+
         # preprocess the validation set
         if val_ds is not None:
             if self.feature_extraction_type == 0:
@@ -173,13 +208,39 @@ class ImageClassifierClassical:
                         ),
                     )
                     self.y_valid.append(label)
+            else:  # self.feature_extraction_type == 2 => LBP
+                for img, label in val_ds:
+                    # print("img shape", img.shape)
+                    # convert tensor to numpy array
+                    img = np.array(img)
+                    # convert the shape to [32,32,3] instead of [3,32,32]
+                    img = np.transpose(img, (1, 2, 0))
+                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    # print("img shape", img.shape)
+                    gray = np.uint8(
+                        255
+                        * (gray - np.min(gray))
+                        / (np.max(gray) - np.min(gray) + np.finfo(float).eps)
+                    )
+                    # LBP features
+                    # Calculate LBP
+                    lbp_image = local_binary_pattern(
+                        gray, self.n_points, self.radius, method="uniform"
+                    )
+                    # Compute the histogram of the LBP
+                    n_bins = int(lbp_image.max() + 1)
+                    hist, _ = np.histogram(
+                        lbp_image, bins=n_bins, range=(0, n_bins), density=True
+                    )
+                    self.lbp_valid.append(hist)
+                    self.y_valid.append(label)
         return train_ds, val_ds
 
     def create_model(self, img_size=256):
         """Create the model"""
         # Kmeans clustering on all training set
         # print("creating kmeans...")
-        if self.model_type == 0:
+        if self.feature_extraction_type == 0:  # sift
             self.n_clusters = np.floor(np.sqrt(len(self.feature_set_train) / 2)).astype(
                 int
             )
@@ -190,7 +251,7 @@ class ImageClassifierClassical:
                 n_init="auto",
                 max_iter=1000,
             )
-
+        if self.model_type == 0:
             self.clf = svm.SVC(
                 decision_function_shape="ovo",
                 random_state=42,
@@ -242,6 +303,8 @@ class ImageClassifierClassical:
                 self.bag_of_words_train.append(vq)
         elif self.feature_extraction_type == 1:
             self.bag_of_words_train = self.hog_train
+        else:
+            self.bag_of_words_train = self.lbp_train
         # Train the multiclass classification model
         print(f"Training model...")
         # Define the parameter grid to search over
@@ -261,9 +324,10 @@ class ImageClassifierClassical:
             param_grid = {
                 "n_estimators": [20, 50, 100],
                 "max_depth": [10, 20, 50],
-                "min_samples_split": [2, 5, 10],
+                # "min_samples_split": [2, 5, 10],
                 "min_samples_leaf": [1, 2, 4],
             }
+        print("Grid search started")
         grid_search = GridSearchCV(
             self.clf,
             param_grid,
@@ -287,6 +351,8 @@ class ImageClassifierClassical:
                 self.bag_of_words_valid.append(vq)
         elif self.feature_extraction_type == 1:  # hog
             self.bag_of_words_valid = self.hog_valid
+        else:
+            self.bag_of_words_valid = self.lbp_valid
         # Predict the labels of the validation set
         print("Predicting the labels of the validation set...")
         valid_accuracy = self.model.score(
@@ -337,6 +403,17 @@ class ImageClassifierClassical:
                 feature_vector=True,
             )
             pred = self.model.predict([hog_features])[0]
+        else:  # self.feature_extraction_type == 2 => LBP
+            # Calculate LBP
+            lbp_image = local_binary_pattern(
+                gray, self.n_points, self.radius, method="uniform"
+            )
+            # Compute the histogram of the LBP
+            n_bins = int(lbp_image.max() + 1)
+            hist, _ = np.histogram(
+                lbp_image, bins=n_bins, range=(0, n_bins), density=True
+            )
+            pred = self.model.predict([hist])[0]
         return pred
 
     def save(self, path):
@@ -344,7 +421,7 @@ class ImageClassifierClassical:
         Args:
             path (str): The path to save the model to
         """
-        if self.model_type == 0:
+        if self.feature_extraction_type == 0:
             # save the number of clusters in json file
             with open(os.path.join(path, "n_clusters.json"), "w") as f:
                 json.dump({"n_clusters": str(self.n_clusters)}, f)
@@ -359,7 +436,7 @@ class ImageClassifierClassical:
             path (str): The path to load the model from
         """
         try:
-            if self.model_type == 0:
+            if self.feature_extraction_type == 0:
                 self.k_means = pickle.load(
                     open(os.path.join(path, self.filename1), "rb")
                 )
