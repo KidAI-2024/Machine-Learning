@@ -23,7 +23,7 @@ pip install -r requirements.txt
 4. Run the code
 
 ```bash
-python main.py
+python app.py
 ```
 
 ## How to run the tests
