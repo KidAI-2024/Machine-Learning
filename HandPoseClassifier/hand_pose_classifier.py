@@ -107,44 +107,52 @@ class HandPoseClassifier:
         self.model = pickle.load(open(path, "rb"))
 
     def feature_importance_graph(self):
-        """Returns the feature importance graph image based on the linear SVM coefficients"""
+        """Returns the feature importance graph image based on the the classifier"""
+        feature_importance = None
+        sorted_feature_names = None
+        title = ""
         if hasattr(self.model, "coef_"):
             feature_importance = np.abs(
                 self.model.coef_[0]
             )  # Take the absolute value of coefficients
-            # Sort the feature importances
-            sorted_idx = np.argsort(feature_importance)
-            sorted_feature_importance = feature_importance[sorted_idx]
-            sorted_feature_names = np.array(self.selected_features_list)[sorted_idx]
-
-            plt.figure(figsize=(10, 6))
-            plt.bar(
-                range(len(feature_importance)),
-                sorted_feature_importance,
-                align="center",
-            )
-            plt.xticks(
-                range(len(feature_importance)), sorted_feature_names, rotation=90
-            )
-            plt.xlabel("Feature Names")
-            plt.ylabel("Absolute Feature Importance")
-            plt.title("Feature Importance in Linear SVM")
-            plt.tight_layout()  # Adjusts the plot to ensure everything fits without overlapping
-            # plt.show()
-            # Convert plot to bytes
-            buf = io.BytesIO()
-            plt.savefig(buf, format="png", dpi=50)
-            buf.seek(0)
-            plt.close()  # Close the figure to avoid memory leaks
-
-            # Encode bytes as base64 to be returned as string
-            image_base64 = base64.b64encode(buf.read()).decode("utf-8")
-            # print size of image
-            # print(f"Size of image: {len(image_base64)}")
-            return image_base64
+            title = "Feature Importance in Linear SVM"
+        elif isinstance(self.model, RandomForestClassifier):
+            feature_importance = self.model.feature_importances_
+            title = "Feature Importance in Random Forest"
+        elif isinstance(self.model, GradientBoostingClassifier):
+            feature_importance = self.model.feature_importances_
+            title = "Feature Importance in Gradient Boosting"
+        elif isinstance(self.model, KNeighborsClassifier):
+            print("Model is KNN. Feature importance not available.")
+            return None
 
         else:
-            print(
-                "Model does not have coef_ attribute. Ensure that the model is a linear SVM."
-            )
+            print("Model does not have feature importance.")
             return None
+
+        # Sort the feature importances
+        sorted_idx = np.argsort(feature_importance)
+        sorted_feature_importance = feature_importance[sorted_idx]
+        sorted_feature_names = np.array(self.selected_features_list)[sorted_idx]
+
+        plt.figure(figsize=(10, 6))
+        plt.bar(
+            range(len(feature_importance)), sorted_feature_importance, align="center"
+        )
+        plt.xticks(range(len(feature_importance)), sorted_feature_names, rotation=90)
+        plt.xlabel("Feature Names")
+        plt.ylabel("Feature Importance")
+        plt.title(title)
+        plt.tight_layout()  # Adjusts the plot to ensure everything fits without overlapping
+        # plt.show()
+        # Convert plot to bytes
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", dpi=50)
+        buf.seek(0)
+        plt.close()  # Close the figure to avoid memory leaks
+
+        # Encode bytes as base64 to be returned as string
+        image_base64 = base64.b64encode(buf.read()).decode("utf-8")
+        # print size of image
+        # print(f"Size of image: {len(image_base64)}")
+        return image_base64
