@@ -232,7 +232,7 @@ class ImageClassifierCNN:
         Args:
             path (str): The path to load the model from
         """
-        self.create_model(img_size=img_size)
+        self.create_model()
         print("start loading model")
         self.model.load_state_dict(torch.load(path))
         self.model = to_device(self.model, self.device)
