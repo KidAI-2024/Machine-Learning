@@ -163,3 +163,7 @@ cython_debug/
 #.idea/
 
 data/
+
+# images
+*.png
+*.jpg

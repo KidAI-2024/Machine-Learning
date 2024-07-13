@@ -128,6 +128,8 @@ def train_hand_pose(req: Req, res: Res) -> int:
     }
     if feature_importance_graph is not None:
         res_msg["feature_importance_graph"] = feature_importance_graph
+    else:
+        res_msg["feature_importance_graph"] = ""
     return res.build(req.event, res_msg)
 
 

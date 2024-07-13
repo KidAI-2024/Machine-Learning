@@ -5,7 +5,7 @@
 1. Create a virtual environment with conda
 
 ```bash
-conda create -n kidai python=3.7
+conda create -n kidai python=3.9
 ```
 
 2. Activate the virtual environment
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 4. Run the code
 
 ```bash
-python main.py
+python app.py
 ```
 
 ## How to run the tests
