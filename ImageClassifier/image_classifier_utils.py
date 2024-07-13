@@ -515,3 +515,28 @@ def b64string_to_tensor(frame_bytes, width, height, in_channels=3):
     # Remove the batch dimension
     image_tensor = image_tensor.squeeze(0)
     return image_tensor
+
+
+def write_integer_to_file(file_path, integer_value):
+    try:
+        with open(file_path, "w") as file:
+            file.write(str(integer_value))
+        print(f"Successfully wrote {integer_value} to {file_path}")
+    except Exception as e:
+        print(f"An error occurred while writing to the file: {e}")
+
+
+def read_integer_from_file(file_path):
+    try:
+        with open(file_path, "r") as file:
+            content = file.read()
+            integer_value = int(content)
+            print(f"Successfully read {integer_value} from {file_path}")
+            return integer_value
+    except FileNotFoundError:
+        print(f"The file {file_path} does not exist.")
+    except ValueError:
+        print(f"The content of the file {file_path} is not a valid integer.")
+    except Exception as e:
+        print(f"An error occurred while reading from the file: {e}")
+    return None

@@ -447,6 +447,9 @@ class ImageClassifierClassical:
             # save the number of clusters in json file
             with open(os.path.join(path, "n_clusters.json"), "w") as f:
                 json.dump({"n_clusters": str(self.n_clusters)}, f)
+
+            file_path = os.path.join(path, "n_clusters.txt")
+            write_integer_to_file(file_path, self.n_clusters)
             # save the kmeans model to disk
             pickle.dump(self.k_means, open(os.path.join(path, self.filename1), "wb"))
         # # save the SVM model to disk
@@ -461,9 +464,15 @@ class ImageClassifierClassical:
         if self.feature_extraction_type == 0:
             self.k_means = pickle.load(open(os.path.join(path, self.filename1), "rb"))
             # read the number of clusters from the json file
-            with open(os.path.join(path, "n_clusters.json"), "r") as f:
-                data = json.load(f)
-                self.n_clusters = int(data["n_clusters"])
+            try:
+                with open(os.path.join(path, "n_clusters.json"), "r") as f:
+                    data = json.load(f)
+                    self.n_clusters = int(data["n_clusters"])
+            except Exception as e:
+                print(f"Error in load json: {e}")
+            # read the number of clusters from the txt file
+            file_path = os.path.join(path, "n_clusters.txt")
+            self.n_clusters = read_integer_from_file(file_path)
         self.model = pickle.load(open(os.path.join(path, self.filename2), "rb"))
         # except Exception as e:
         #     print(f"Error in load: {e}")
