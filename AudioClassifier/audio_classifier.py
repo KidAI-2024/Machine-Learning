@@ -8,33 +8,80 @@ from .audio_utils import AudioUtils
 import joblib
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import accuracy_score, confusion_matrix
-import seaborn as sns
+
 import matplotlib.pyplot as plt
 from pydub import AudioSegment
 import time
-
-
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import  GradientBoostingClassifier
 class AudioClassifier:
     def __init__(self):
         self.model = SVC(kernel='rbf')
         self.audio_utils = AudioUtils()
         self.class_name_to_index = {}
         self.scaler = StandardScaler()  # Make scaler an instance variable
+        self.feature_extraction_methods="chroma_mfccs"
+        self.model_name="boost"
+        self.kernel_name="rbf"
+        self.Knn_neigh="5"
+        self.num_est="100"
 
     def extract_features(self, file_path, audio=False):
         try:
             if audio:
-                mfccs = librosa.feature.mfcc(y=file_path, sr=44100, n_mfcc=13)
-                mfccs_mean = np.mean(mfccs, axis=1)
-                return mfccs_mean
+                y = file_path  # If audio is passed directly
+                sr = 44100
             else:
                 y, sr = librosa.load(file_path, sr=None)
+
+            methods = self.feature_extraction_methods.split('_')
+            features = []
+
+            if "mfccs" in methods:
+               
                 mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-                mfccs_mean = np.mean(mfccs, axis=1)
-                return mfccs_mean
+                if mfccs.size > 0:
+                    mfccs_mean = np.mean(mfccs, axis=1)
+                    features.append(mfccs_mean)
+                    
+                else:
+                    print("MFCCs: Empty feature array detected")
+
+            if "chroma" in methods:
+                
+                chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+                if chroma.size > 0:
+                    chroma_mean = np.mean(chroma, axis=1)
+                    features.append(chroma_mean)
+                   
+                else:
+                    print("Chroma: Empty feature array detected")
+
+            if "mel" in methods:
+                
+                mel_spec = librosa.feature.melspectrogram(y=y, sr=sr)
+                mel_spec_db = librosa.amplitude_to_db(mel_spec, ref=np.max)
+                if mel_spec.size > 0:
+                    mel_spec_mean = np.mean(mel_spec_db, axis=1)
+                    features.append(mel_spec_mean)
+                   
+                else:
+                    print("Mel-spectrogram: Empty feature array detected")
+            # Ensure only non-empty arrays are concatenated
+            if len(features) > 0:
+                if isinstance(features[0], np.ndarray):
+                    features = [f for f in features if f.size > 0]
+                    features = np.concatenate(features)
+                
+                return features
+            else:
+                raise ValueError("All extracted features are empty.")
+
         except Exception as e:
             print(f"Error extracting features from {file_path}: {e}")
             return None
+        
+
 
     def load_dataset(self, directory):
         features = []
@@ -92,6 +139,17 @@ class AudioClassifier:
         X_train = self.scaler.fit_transform(X_train)
 
         joblib.dump(self.scaler, 'scaler.pkl')
+        
+        if self.model_name=="svm":
+            print("svmmmmmmmmm")
+            print("kernel ",self.kernel_name)
+            self.model=SVC(kernel=self.kernel_name)
+
+        if self.model_name=="knn":
+             self.model = KNeighborsClassifier(n_neighbors=int(self.Knn_neigh))
+        
+        if self.model_name=="boost":
+             self.model = GradientBoostingClassifier(n_estimators=int(self.num_est))
 
         # Train a classifier
         self.model.fit(X_train, y_train_mapped)
@@ -99,7 +157,7 @@ class AudioClassifier:
         # Calculate training accuracy
         train_predictions = self.model.predict(X_train)
         train_accuracy = accuracy_score(y_train_mapped, train_predictions)
-        print(f"Training accuracy : {train_accuracy:.4f}")
+        print(f"Training accuracy : {int(train_accuracy*100)}")
         # Print confusion matrix
         conf_matrix = confusion_matrix(y_train_mapped, train_predictions)
         print("Confusion Matrix :")
@@ -109,6 +167,7 @@ class AudioClassifier:
 
         
         print("Training completed successfully.")
+        return int(train_accuracy*100)
 
 
     def pred_test(self, directory):
@@ -179,35 +238,29 @@ class AudioClassifier:
         # print(pred)
         return class_index
 
+        
     def save(self, path):
-        """Save the model and scaler to disk"""
         with open(path, "wb") as model_file:
-            pickle.dump({"model": self.model, "scaler": self.scaler}, model_file)
-
-
+            pickle.dump({
+                "model": self.model,
+                "scaler": self.scaler,
+                "feature_extraction_methods": self.feature_extraction_methods,
+                "model_name": self.model_name,
+                "kernel_name": self.kernel_name,
+                "knn_neigh": self.Knn_neigh,
+                "num_est": self.num_est
+            }, model_file)
 
     def load(self, path):
-        """Load the model and scaler from disk"""
-        # try:
         with open(path, "rb") as model_file:
+            
             data = pickle.load(model_file)
             self.model = data["model"]
             self.scaler = data["scaler"]
+            self.feature_extraction_methods = data["feature_extraction_methods"]
+            self.model_name = data["model_name"]
+            self.kernel_name = data["kernel_name"]
+            self.Knn_neigh = data["knn_neigh"]
+            self.num_est = data["num_est"]
+            print(data)
         print("Model and scaler loaded successfully from", path)
-        # except FileNotFoundError:
-        #     print(f"Error: Model file '{path}' not found.")
-        # except Exception as e:
-        #     print(f"Error loading model and scaler from '{path}': {e}")
-
-
-    # def load(self, path):
-    #     """Load the model and scaler from disk"""
-    #     # print("inseifsdfadfadfadfadfa",path)
-    #     with open(path, "rb") as model_file:
-    #         print("path opened ",path)
-    #         data = pickle.load(model_file)
-    #         self.model = data["model"]
-    #         self.scaler = data["scaler"]
-    #         print("in loading ..........",self.scaler)
-
-# Assuming AudioUtils class is defined elsewhere with necessary methods.

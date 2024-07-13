@@ -37,14 +37,34 @@ ind = 0
 vad = webrtcvad.Vad()
 vad.set_mode(3)  # 0: least aggressive, 3: most aggressive
 
+
+# @event("choose_model")
+# def choose_model(req:Req,res:Res)->int:
+    
+
 @event("start_audio_train")
 def train_audio(req: Req, res: Res) -> int:
     path = req.msg["path"]
+    if req.msg.get("feature_extraction_methods"):
+        
+        audio_classifier.feature_extraction_methods=req.msg["feature_extraction_methods"]
     
-    # Training data is map {"Class Number(first character in the folder name)" : [images]}
-    print("Training data...")
+    if req.msg.get("model_name"):
+        
+        audio_classifier.model_name=req.msg["model_name"]
+    if req.msg.get("kernel_name"):
+        
+        audio_classifier.kernel_name=req.msg["kernel_name"]
+    if req.msg.get("knn_neigh"):
+        
+        audio_classifier.Knn_neigh=req.msg["knn_neigh"]
+    if req.msg.get("num_est"):
+        
+        audio_classifier.num_est=req.msg["num_est"]
 
-    audio_classifier.train(path)
+
+    print("Training data...")
+    accuracy=audio_classifier.train(path)
 
     print("Saving model...")
     project_name = path.split("/")[-1]
@@ -52,8 +72,8 @@ def train_audio(req: Req, res: Res) -> int:
     model_path = os.path.join(path, project_name, saved_model_name)   # Current directory is Machine-Learning
     audio_classifier.save(model_path)
     print(f"Model saved to {model_path}")
-    print("Training completed successfully!")
-    res_msg = {"status": "success", "saved_model_name": saved_model_name, "dum": "dummy"}
+    print("Training completed successfully! ",req.event)
+    res_msg = {"status": "success", "saved_model_name": saved_model_name, "accuracy": str(accuracy)}
     return res.build(req.event, res_msg)
 
 
@@ -67,6 +87,7 @@ def load_audio_model(req: Req, res: Res) -> int:
     # resampy.resample(dummy_audio, 44100, 32000)
     y, sr = librosa.load("accumulated_audio.wav")
     dummy_audio = np.zeros(44100, dtype=np.float32)  # 1 second of silence at 44100 Hz
+    
 
     # Perform a dummy resampling to warm up the process
     resampy.resample(dummy_audio, 44100, 32000) 

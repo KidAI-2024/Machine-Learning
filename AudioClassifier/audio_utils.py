@@ -5,8 +5,7 @@ from pydub.generators import WhiteNoise
 from pydub import AudioSegment
 import soundfile as sf 
 import numpy as np
-
-  
+import shutil
 
 class AudioUtils:
     def __init__(self):
@@ -48,10 +47,13 @@ class AudioUtils:
             parent_directory = os.path.dirname(root_directory)
             output_directory = os.path.join(parent_directory, os.path.basename(root_directory) + "_augmented")
 
-            # Ensure the output directory exists
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
+          # Ensure the output directory exists and is empty
+            if os.path.exists(output_directory):
+                # Remove all contents of the directory
+                shutil.rmtree(output_directory)
 
+            # Recreate the output directory
+            os.makedirs(output_directory)
             for dirpath, _, filenames in os.walk(root_directory):
                 for filename in filenames:
                     try:
