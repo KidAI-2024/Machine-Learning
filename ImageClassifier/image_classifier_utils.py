@@ -22,6 +22,7 @@ import cv2
 from sklearn import svm
 from sklearn import cluster
 import pickle
+import shutil
 from sklearn.model_selection import (
     GridSearchCV,
     learning_curve,
