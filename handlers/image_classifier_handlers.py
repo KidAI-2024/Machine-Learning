@@ -197,7 +197,7 @@ def predict_image_classifier(req: Req, res: Res):
         pred = -1
     else:
         print("Predicting...")
-        print(f"Image shape: {image.shape}")
+        # print(f"Image shape: {image.shape}")
         # convert the image to tensor
         img_tensor = torch.tensor(image)
         # print("img shape: ", img_tensor.shape)
@@ -222,7 +222,7 @@ def predict_image_classifier(req: Req, res: Res):
                 )  # deep learning model
         except Exception as e:
             print(f"Error in predict: {e}")
-            return -1
+            pred = -1
 
     res_msg = {"prediction": str(pred)}
     print(f"Predicted class: {pred}")

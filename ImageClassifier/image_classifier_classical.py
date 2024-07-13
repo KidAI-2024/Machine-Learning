@@ -448,18 +448,18 @@ class ImageClassifierClassical:
         Args:
             path (str): The path to load the model from
         """
-        try:
-            if self.feature_extraction_type == 0:
-                self.k_means = pickle.load(
-                    open(os.path.join(path, self.filename1), "rb")
-                )
-                # read the number of clusters from the json file
-                with open(os.path.join(path, "n_clusters.json"), "r") as f:
-                    data = json.load(f)
-                    self.n_clusters = int(data["n_clusters"])
-            self.model = pickle.load(open(os.path.join(path, self.filename2), "rb"))
-        except Exception as e:
-            print(f"Error in load: {e}")
+        # try:
+        if self.feature_extraction_type == 0:
+            self.k_means = pickle.load(
+                open(os.path.join(path, self.filename1), "rb")
+            )
+            # read the number of clusters from the json file
+            with open(os.path.join(path, "n_clusters.json"), "r") as f:
+                data = json.load(f)
+                self.n_clusters = int(data["n_clusters"])
+        self.model = pickle.load(open(os.path.join(path, self.filename2), "rb"))
+        # except Exception as e:
+        #     print(f"Error in load: {e}")
             # self.create_model()
 
     def start_feed(self):
