@@ -174,42 +174,46 @@ def predict_image_classifier(req: Req, res: Res):
     except ValueError:
         height = 180
         print(f"Invalid height: {height_str}")
-    # Convert the bytes to an image
-    image = b64string_to_image_float(frame_bytes, (height, width, 3))
-    # ignore the image it was all black
-    if np.all(image == 0):
-        pred = -1
-    else:
-        print("Predicting...")
-        # print(f"Image shape: {image.shape}")
-        # convert the image to tensor
-        img_tensor = torch.tensor(image)
-        # print("img shape: ", img_tensor.shape)
-        # Convert to shape [3, 320, 180]
-        converted_tensor = img_tensor.permute(2, 1, 0)
-        # print("converted_tensor shape: ", converted_tensor.shape)
-        # transformed_tensor = image_classifier.transform_v(converted_tensor)
-        transformed_tensor = torch.nn.functional.interpolate(
-            converted_tensor.unsqueeze(0),
-            size=(IMG_SIZE, IMG_SIZE),
-            # size=(32, 32),
-            mode="bilinear",
-            align_corners=False,
-        )
-        transformed_tensor = transformed_tensor.squeeze(0)
-        try:
-            if image_classifier.model_category == 0:
-                print("Predicting with classical model...")
-                print(image_classifier.model_category)
-                pred = image_classifier.predict(image)  # classical model
-            else:
-                pred = image_classifier.predict(
-                    transformed_tensor
-                )  # deep learning model
-        except Exception as e:
-            print(f"Error in predict: {e}")
-            pred = -1
 
+    try:
+        # Convert the bytes to an image
+        image = b64string_to_image_float(frame_bytes, (height, width, 3))
+        # ignore the image it was all black
+        if np.all(image == 0):
+            pred = -1
+        else:
+            print("Predicting...")
+            # print(f"Image shape: {image.shape}")
+            # convert the image to tensor
+            img_tensor = torch.tensor(image)
+            # print("img shape: ", img_tensor.shape)
+            # Convert to shape [3, 320, 180]
+            converted_tensor = img_tensor.permute(2, 1, 0)
+            # print("converted_tensor shape: ", converted_tensor.shape)
+            # transformed_tensor = image_classifier.transform_v(converted_tensor)
+            transformed_tensor = torch.nn.functional.interpolate(
+                converted_tensor.unsqueeze(0),
+                size=(IMG_SIZE, IMG_SIZE),
+                # size=(32, 32),
+                mode="bilinear",
+                align_corners=False,
+            )
+            transformed_tensor = transformed_tensor.squeeze(0)
+            try:
+                if image_classifier.model_category == 0:
+                    print("Predicting with classical model...")
+                    print(image_classifier.model_category)
+                    pred = image_classifier.predict(image)  # classical model
+                else:
+                    pred = image_classifier.predict(
+                        transformed_tensor
+                    )  # deep learning model
+            except Exception as e:
+                print(f"Error in predict: {e}")
+                pred = -1
+    except Exception as e:
+        print(f"Error in predict: {e}")
+        pred = -1
     res_msg = {"prediction": str(pred)}
     print(f"Predicted class: {pred}")
     return res.build(req.event, res_msg)
