@@ -406,6 +406,9 @@ class ImageClassifierClassical:
                 # print("len descriptor", len(descriptor))
                 for feature in descriptor:
                     vq[feature] = vq[feature] + 1
+                if self.model is None:
+                    print("Model is None")
+                    return -1
                 pred = self.model.predict([vq])[0]
         elif self.feature_extraction_type == 1:  # hog
             # hog features
@@ -415,6 +418,9 @@ class ImageClassifierClassical:
                 transform_sqrt=True,
                 feature_vector=True,
             )
+            if self.model is None:
+                print("Model is None")
+                return -1
             pred = self.model.predict([hog_features])[0]
         else:  # self.feature_extraction_type == 2 => LBP
             # Calculate LBP
@@ -426,6 +432,9 @@ class ImageClassifierClassical:
             hist, _ = np.histogram(
                 lbp_image, bins=n_bins, range=(0, n_bins), density=True
             )
+            if self.model is None:
+                print("Model is None")
+                return -1
             pred = self.model.predict([hist])[0]
         return pred
 
@@ -450,9 +459,7 @@ class ImageClassifierClassical:
         """
         # try:
         if self.feature_extraction_type == 0:
-            self.k_means = pickle.load(
-                open(os.path.join(path, self.filename1), "rb")
-            )
+            self.k_means = pickle.load(open(os.path.join(path, self.filename1), "rb"))
             # read the number of clusters from the json file
             with open(os.path.join(path, "n_clusters.json"), "r") as f:
                 data = json.load(f)
@@ -460,7 +467,7 @@ class ImageClassifierClassical:
         self.model = pickle.load(open(os.path.join(path, self.filename2), "rb"))
         # except Exception as e:
         #     print(f"Error in load: {e}")
-            # self.create_model()
+        # self.create_model()
 
     def start_feed(self):
         """Start the camera feed"""
