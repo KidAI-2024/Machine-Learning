@@ -216,11 +216,10 @@ class TestHandPoseHandlers:
         mock the load function avoid raising an exception for not finding the path
         """
         mocker.patch.object(HandPoseClassifier, "load")
-        path = "C:/Users/username/Documents/Projects/HandPoseClassifier/models"
+        path = "path_to_model"
         saved_model_name = "hand_pose_model.pkl"
         model = "SVM"
         feature_extraction_type = "mediapipe"
-        hand_pose_classifier.selected_features_list = ["feature1", "feature2"]
         msg = {
             "path": path,
             "saved_model_name": saved_model_name,
@@ -245,11 +244,10 @@ class TestHandPoseHandlers:
         """
         mock the load function avoid raising an exception for not finding the path
         """
-        path = "C:/Users/username/Documents/Projects/HandPoseClassifier/models"
+        path = "path_to_model"
         saved_model_name = "hand_pose_model.pkl"
         model = "SVM"
         feature_extraction_type = "mediapipe"
-        hand_pose_classifier.selected_features_list = ["feature1", "feature2"]
         msg = {
             "path": path,
             "saved_model_name": saved_model_name,
