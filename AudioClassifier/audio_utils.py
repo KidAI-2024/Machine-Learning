@@ -5,8 +5,7 @@ from pydub.generators import WhiteNoise
 from pydub import AudioSegment
 import soundfile as sf 
 import numpy as np
-
-  
+import shutil
 
 class AudioUtils:
     def __init__(self):
@@ -48,10 +47,13 @@ class AudioUtils:
             parent_directory = os.path.dirname(root_directory)
             output_directory = os.path.join(parent_directory, os.path.basename(root_directory) + "_augmented")
 
-            # Ensure the output directory exists
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
+          # Ensure the output directory exists and is empty
+            if os.path.exists(output_directory):
+                # Remove all contents of the directory
+                shutil.rmtree(output_directory)
 
+            # Recreate the output directory
+            os.makedirs(output_directory)
             for dirpath, _, filenames in os.walk(root_directory):
                 for filename in filenames:
                     try:
@@ -60,15 +62,7 @@ class AudioUtils:
 
                         # Load the audio file
                         y, sr = librosa.load(filepath)
-                        # audio_segment = AudioSegment(
-                        #     y.tobytes(), 
-                        #     frame_rate=sr,
-                        #     sample_width=y.dtype.itemsize,
-                        #     channels=1  # librosa loads audio in mono
-                        # )
-                        # y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
-                        # # y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
-
+                       
                         # # Detect non-silent segments
                         non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed
 
@@ -118,17 +112,11 @@ class AudioUtils:
 
     def preprocess_audio(self, filepath, sr=44100):
         try:
+            print("bef middle")
             y, sr = librosa.load(filepath)
-            # audio_segment = AudioSegment(
-            #     y.tobytes(), 
-            #     frame_rate=sr,
-            #     sample_width=y.dtype.itemsize,
-            #     channels=1  # librosa loads audio in mono
-            # )
-            # y = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
-            # y = y / 32768.0  # Normalize the array to be in the range [-1, 1]
-
+            
             # Detect non-silent segments
+            print("in middle")
             non_silent_intervals = librosa.effects.split(y, top_db=20)  # Adjust top_db as needed
 
             # Find the effective 1 second segment
@@ -145,7 +133,6 @@ class AudioUtils:
                 if len(effective_segment) >= effective_samples:
                     effective_segment = effective_segment[:effective_samples]
                     break
-
             # If the effective segment is still less than 1 second, pad with silence
             if len(effective_segment) < effective_samples:
                 padding = np.zeros(effective_samples - len(effective_segment), dtype=y.dtype)
