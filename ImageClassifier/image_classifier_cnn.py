@@ -30,7 +30,9 @@ class ImageClassifierCNN:
         self.camera = CameraFeed()
         self.transform_t = tt.Compose(
             [
-                tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                # resize the input image to self.img_size * self.img_size
+                tt.Resize((img_size, img_size)),
+                # tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
                 tt.RandomResizedCrop(img_size, scale=(0.5, 0.9), ratio=(1, 1)),

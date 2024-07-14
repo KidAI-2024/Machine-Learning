@@ -36,7 +36,8 @@ class ImageClassifierClassical:
         self.in_channels = in_channels
         self.transform_t = tt.Compose(
             [
-                tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                # tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                tt.Resize((img_size, img_size)),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
                 tt.RandomResizedCrop(img_size, scale=(0.5, 0.9), ratio=(1, 1)),

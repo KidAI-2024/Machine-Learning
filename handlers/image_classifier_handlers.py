@@ -10,7 +10,7 @@ BATCH_SIZE = 64
 
 train_ds = None
 valid_ds = None
-IMG_SIZE = 32
+IMG_SIZE = 64
 
 # image_classifier = ImageClassifierCNN(img_size=IMG_SIZE)
 # image_classifier = ImageClassifierResNet(img_size=IMG_SIZE)
@@ -70,7 +70,6 @@ def train_image_classifier(req: Req, res: Res) -> int:
     image_classifier.feature_extraction_type_img = feature_extraction_type_img
     image_classifier.epochs = epochs
     image_classifier.max_lr = max_lr
-
     try:
         image_classifier.set_model_category()
         try:
@@ -79,13 +78,13 @@ def train_image_classifier(req: Req, res: Res) -> int:
         except Exception as e:
             print(f"Error in reading data: {e}")
             res_msg = {"status": "failed", "error": "Error in reading data"}
-            res.build(req.event, res_msg)
+            return res.build(req.event, res_msg)
         print("Creating model...")
         image_classifier.create_model()
     except Exception as e:
         print(f"Error in creating model: {e}")
         res_msg = {"status": "failed", "error": "Error in creating model"}
-        res.build(req.event, res_msg)
+        return res.build(req.event, res_msg)
     try:
         print("Creating data loaders...")
         # PyTorch data loaders
@@ -100,13 +99,14 @@ def train_image_classifier(req: Req, res: Res) -> int:
             train_dl=train_dl,
             valid_dl=valid_dl,
         )
-        if training_accuracy is not None and valid_accuracy is not None:
+        if training_accuracy is not None:
             print(f"Training accuracy: {training_accuracy}")
+        if valid_accuracy is not None:
             print(f"Validation accuracy: {valid_accuracy}")
     except Exception as e:
         print(f"Error in train: {e}")
         res_msg = {"status": "failed", "error": "Error in training"}
-        res.build(req.event, res_msg)
+        return res.build(req.event, res_msg)
 
     try:
         print("Saving model...")
@@ -122,14 +122,13 @@ def train_image_classifier(req: Req, res: Res) -> int:
     except Exception as e:
         print(f"Error in save: {e}")
         res_msg = {"status": "failed", "error": "Error in saving model"}
-        res.build(req.event, res_msg)
+        return res.build(req.event, res_msg)
     res_msg = {
         "status": "success",
         "saved_model_name": saved_model_name,
         "training_accuracy": (
             training_accuracy if training_accuracy is not None else valid_accuracy
         ),
-        # "training_accuracy": valid_accuracy,
     }
     return res.build(req.event, res_msg)
 
@@ -188,9 +187,12 @@ def predict_image_classifier(req: Req, res: Res):
             # print(f"Image shape: {image.shape}")
             # print image max and min
             # resize the image to IMG_SIZE x IMG_SIZE x 3
-            image = cv2.resize(
-                image, dsize=(IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA
-            )
+            if image_classifier.model_category == 1:
+                image = cv2.resize(image, dsize=(32, 32), interpolation=cv2.INTER_AREA)
+            else:
+                image = cv2.resize(
+                    image, dsize=(IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA
+                )
             # print("Resized image shape: ", image.shape)
             # convert the image to tensor
             img_tensor = torch.tensor(image)
@@ -199,13 +201,22 @@ def predict_image_classifier(req: Req, res: Res):
             converted_tensor = img_tensor.permute(2, 1, 0)
             # print("converted_tensor shape: ", converted_tensor.shape)
             # transformed_tensor = image_classifier.transform_v(converted_tensor)
-            transformed_tensor = torch.nn.functional.interpolate(
-                converted_tensor.unsqueeze(0),
-                size=(IMG_SIZE, IMG_SIZE),
-                # size=(32, 32),
-                mode="bilinear",
-                align_corners=False,
-            )
+            if image_classifier.model_category == 1:
+                transformed_tensor = torch.nn.functional.interpolate(
+                    converted_tensor.unsqueeze(0),
+                    size=(32, 32),
+                    # size=(32, 32),
+                    mode="bilinear",
+                    align_corners=False,
+                )
+            else:
+                transformed_tensor = torch.nn.functional.interpolate(
+                    converted_tensor.unsqueeze(0),
+                    size=(IMG_SIZE, IMG_SIZE),
+                    # size=(32, 32),
+                    mode="bilinear",
+                    align_corners=False,
+                )
             transformed_tensor = transformed_tensor.squeeze(0)
             # print("transformed_tensor shape: ", transformed_tensor.shape)
             try:
