@@ -68,7 +68,12 @@ class ImageClassifierCNN:
         """
 
         # Data transforms (data augmentation)
-
+        # search for test directory in the path if exists then delete it
+        test_dir = os.path.join(path, "test")
+        if os.path.exists(test_dir):
+            print("test directory exists")
+            # delete the test directory
+            shutil.rmtree(test_dir)
         # PyTorch datasets
         dataset = ImageFolder(path, self.transform_t)
         self.train_size = int(train_precentage * len(dataset))

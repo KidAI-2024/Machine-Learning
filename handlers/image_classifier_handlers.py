@@ -6,7 +6,7 @@ from server_utils import Req, Res
 import time
 
 NUM_WORKERS = int(os.cpu_count() / 2)
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 
 train_ds = None
 valid_ds = None

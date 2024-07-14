@@ -54,6 +54,11 @@ class ImageClassifierResNet:
         Args:
             images (ImageFolder): The images to preprocess
         """
+        test_dir = os.path.join(path, "test")
+        if os.path.exists(test_dir):
+            print("test directory exists")
+            # delete the test directory
+            shutil.rmtree(test_dir)
         # Data transforms (data augmentation)
         # PyTorch datasets
         dataset = ImageFolder(path, self.transform_t)

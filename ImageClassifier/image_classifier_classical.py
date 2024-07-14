@@ -67,6 +67,11 @@ class ImageClassifierClassical:
         Args:
             images (ImageFolder): The images to preprocess
         """
+        test_dir = os.path.join(path, "test")
+        if os.path.exists(test_dir):
+            print("test directory exists")
+            # delete the test directory
+            shutil.rmtree(test_dir)
         dataset = ImageFolder(path, self.transform_t)
         self.train_size = int(train_precentage * len(dataset))
         self.valid_size = len(dataset) - self.train_size
