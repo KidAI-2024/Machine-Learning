@@ -38,6 +38,14 @@ class ImageClassifierCNN:
                 tt.ToTensor(),
             ]
         )
+        # prediction transform
+        # resize the input image to self.img_size * self.img_size
+        self.transform_p = tt.Compose(
+            [
+                tt.Resize((img_size, img_size)),
+                tt.ToTensor(),
+            ]
+        )
 
     def create_model(self):
         """Create the model"""

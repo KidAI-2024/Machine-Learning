@@ -185,7 +185,13 @@ def predict_image_classifier(req: Req, res: Res):
             pred = -1
         else:
             print("Predicting...")
-            print(f"Image shape: {image.shape}")
+            # print(f"Image shape: {image.shape}")
+            # print image max and min
+            # resize the image to IMG_SIZE x IMG_SIZE x 3
+            image = cv2.resize(
+                image, dsize=(IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_AREA
+            )
+            # print("Resized image shape: ", image.shape)
             # convert the image to tensor
             img_tensor = torch.tensor(image)
             # print("img shape: ", img_tensor.shape)
@@ -201,6 +207,7 @@ def predict_image_classifier(req: Req, res: Res):
                 align_corners=False,
             )
             transformed_tensor = transformed_tensor.squeeze(0)
+            # print("transformed_tensor shape: ", transformed_tensor.shape)
             try:
                 if image_classifier.model_category == 0:
                     print("Predicting with classical model...")
