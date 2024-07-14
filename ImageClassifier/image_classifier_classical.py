@@ -36,7 +36,8 @@ class ImageClassifierClassical:
         self.in_channels = in_channels
         self.transform_t = tt.Compose(
             [
-                tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                # tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                tt.Resize((img_size, img_size)),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
                 tt.RandomResizedCrop(img_size, scale=(0.5, 0.9), ratio=(1, 1)),
@@ -66,6 +67,11 @@ class ImageClassifierClassical:
         Args:
             images (ImageFolder): The images to preprocess
         """
+        test_dir = os.path.join(path, "test")
+        if os.path.exists(test_dir):
+            print("test directory exists")
+            # delete the test directory
+            shutil.rmtree(test_dir)
         dataset = ImageFolder(path, self.transform_t)
         self.train_size = int(train_precentage * len(dataset))
         self.valid_size = len(dataset) - self.train_size
@@ -263,17 +269,20 @@ class ImageClassifierClassical:
                 max_iter=1000,
             )
         if self.model_type == 0:
+            print("Creating SVM model...")
             self.clf = svm.SVC(
                 decision_function_shape="ovo",
                 random_state=42,
                 max_iter=1000,
             )
         elif self.model_type == 1:
+            print("Creating Logistic Regression model...")
             self.clf = LogisticRegression(
                 random_state=42,
                 max_iter=1000,
             )
         elif self.model_type == 2:
+            print("Creating Random Forest model...")
             self.clf = RandomForestClassifier(
                 random_state=42,
                 n_jobs=-1,
@@ -385,9 +394,9 @@ class ImageClassifierClassical:
         # img = np.array(img)
         # convert the shape to [32,32,3] instead of [3,32,32]
         # img = np.transpose(img, (1, 2, 0))
-        # print("img shape", img.shape)
+        print("img shape", img.shape)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # print("img shape", img.shape)
+        print("img shape", img.shape)
         gray = np.uint8(
             255
             * (gray - np.min(gray))
@@ -395,19 +404,24 @@ class ImageClassifierClassical:
         )
         # Keypoints, descriptors
         if self.feature_extraction_type == 0:  # sift
+            print("predict sift")
             kp, descriptor = self.sift.detectAndCompute(gray, None)
             # Each keypoint has a descriptor with length 128
             if descriptor is None:
                 return -1
             else:
-                # print("kmeans prediction...")
+                print("kmeans prediction...")
                 vq = [0] * self.n_clusters
                 descriptor = self.k_means.predict(descriptor)
-                # print("len descriptor", len(descriptor))
+                print("len descriptor", len(descriptor))
                 for feature in descriptor:
                     vq[feature] = vq[feature] + 1
+                if self.model is None:
+                    print("Model is None")
+                    return -1
                 pred = self.model.predict([vq])[0]
         elif self.feature_extraction_type == 1:  # hog
+            print("predict hog")
             # hog features
             hog_features = hog(
                 gray,
@@ -415,8 +429,13 @@ class ImageClassifierClassical:
                 transform_sqrt=True,
                 feature_vector=True,
             )
+            print("hog_features shape", hog_features.shape)
+            if self.model is None:
+                print("Model is None")
+                return -1
             pred = self.model.predict([hog_features])[0]
         else:  # self.feature_extraction_type == 2 => LBP
+            print("predict lbp")
             # Calculate LBP
             lbp_image = local_binary_pattern(
                 gray, self.n_points, self.radius, method="uniform"
@@ -426,6 +445,10 @@ class ImageClassifierClassical:
             hist, _ = np.histogram(
                 lbp_image, bins=n_bins, range=(0, n_bins), density=True
             )
+            print("hist shape", hist.shape)
+            if self.model is None:
+                print("Model is None")
+                return -1
             pred = self.model.predict([hist])[0]
         return pred
 
@@ -438,6 +461,9 @@ class ImageClassifierClassical:
             # save the number of clusters in json file
             with open(os.path.join(path, "n_clusters.json"), "w") as f:
                 json.dump({"n_clusters": str(self.n_clusters)}, f)
+
+            file_path = os.path.join(path, "n_clusters.txt")
+            write_integer_to_file(file_path, self.n_clusters)
             # save the kmeans model to disk
             pickle.dump(self.k_means, open(os.path.join(path, self.filename1), "wb"))
         # # save the SVM model to disk
@@ -450,17 +476,21 @@ class ImageClassifierClassical:
         """
         # try:
         if self.feature_extraction_type == 0:
-            self.k_means = pickle.load(
-                open(os.path.join(path, self.filename1), "rb")
-            )
+            self.k_means = pickle.load(open(os.path.join(path, self.filename1), "rb"))
             # read the number of clusters from the json file
-            with open(os.path.join(path, "n_clusters.json"), "r") as f:
-                data = json.load(f)
-                self.n_clusters = int(data["n_clusters"])
+            try:
+                with open(os.path.join(path, "n_clusters.json"), "r") as f:
+                    data = json.load(f)
+                    self.n_clusters = int(data["n_clusters"])
+            except Exception as e:
+                print(f"Error in load json: {e}")
+            # read the number of clusters from the txt file
+            file_path = os.path.join(path, "n_clusters.txt")
+            self.n_clusters = read_integer_from_file(file_path)
         self.model = pickle.load(open(os.path.join(path, self.filename2), "rb"))
         # except Exception as e:
         #     print(f"Error in load: {e}")
-            # self.create_model()
+        # self.create_model()
 
     def start_feed(self):
         """Start the camera feed"""

@@ -161,7 +161,7 @@ def conv_block(in_channels, out_channels, pool=False):
 
 
 class ResNet9(ImageClassificationBaseResnet):
-    def __init__(self, in_channels, num_classes, img_size=256):
+    def __init__(self, in_channels, num_classes, img_size=32):
         super().__init__()
         self.num_classes = num_classes
         self.in_channels = in_channels
@@ -182,12 +182,6 @@ class ResNet9(ImageClassificationBaseResnet):
             conv_block(512, 512),  # 32*32*512
             conv_block(512, 512),  # 32*32*512
         )
-        # self.conv5 = conv_block(512, 1024, pool=True)  # 16*16*1024
-        # self.conv6 = conv_block(1024, 2048, pool=True)  # 8*8*2048
-        # self.res3 = nn.Sequential(
-        #     conv_block(2048, 2048),  # 8*8*2048
-        #     conv_block(2048, 2048),  # 8*8*2048
-        # )
         # print("ResNet9 model created 2")
         self.classifier = nn.Sequential(
             nn.MaxPool2d(4),  # 4*4*512
@@ -200,27 +194,21 @@ class ResNet9(ImageClassificationBaseResnet):
         # print("ResNet9 model created 3")
 
     def forward(self, xb):
-        # print("xb", xb.shape)
+        print("xb", xb.shape)
         out = self.conv1(xb)
-        # print("conv1 out", out.shape)
+        print("conv1 out", out.shape)
         out = self.conv2(out)
-        # print("conv2 out", out.shape)
+        print("conv2 out", out.shape)
         out = self.res1(out) + out
-        # print("res1 out", out.shape)
+        print("res1 out", out.shape)
         out = self.conv3(out)
-        # print("conv3 out", out.shape)
+        print("conv3 out", out.shape)
         out = self.conv4(out)
-        # print("conv4 out", out.shape)
+        print("conv4 out", out.shape)
         out = self.res2(out) + out
-        # TODO: check on the new resnet model
-        # out = self.conv5(out)
-        # print("conv5 out", out.shape)
-        # out = self.conv6(out)
-        # print("conv6 out", out.shape)
-        # out = self.res3(out) + out
-        # print("res2 out", out.shape)
+        print("res2 out", out.shape)
         out = self.classifier(out)
-        # print("classifier out", out.shape)
+        print("classifier out", out.shape)
         # final_layer_dim = out.shape[1]
         # print("final_layer_dim", final_layer_dim)
         # out = nn.Linear(final_layer_dim, self.num_classes)(out)
@@ -515,3 +503,28 @@ def b64string_to_tensor(frame_bytes, width, height, in_channels=3):
     # Remove the batch dimension
     image_tensor = image_tensor.squeeze(0)
     return image_tensor
+
+
+def write_integer_to_file(file_path, integer_value):
+    try:
+        with open(file_path, "w") as file:
+            file.write(str(integer_value))
+        print(f"Successfully wrote {integer_value} to {file_path}")
+    except Exception as e:
+        print(f"An error occurred while writing to the file: {e}")
+
+
+def read_integer_from_file(file_path):
+    try:
+        with open(file_path, "r") as file:
+            content = file.read()
+            integer_value = int(content)
+            print(f"Successfully read {integer_value} from {file_path}")
+            return integer_value
+    except FileNotFoundError:
+        print(f"The file {file_path} does not exist.")
+    except ValueError:
+        print(f"The content of the file {file_path} is not a valid integer.")
+    except Exception as e:
+        print(f"An error occurred while reading from the file: {e}")
+    return None

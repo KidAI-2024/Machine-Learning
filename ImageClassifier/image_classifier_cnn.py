@@ -30,11 +30,21 @@ class ImageClassifierCNN:
         self.camera = CameraFeed()
         self.transform_t = tt.Compose(
             [
-                tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                # resize the input image to self.img_size * self.img_size
+                tt.Resize((img_size, img_size)),
+                # tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
                 tt.RandomResizedCrop(img_size, scale=(0.5, 0.9), ratio=(1, 1)),
                 tt.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+                tt.ToTensor(),
+            ]
+        )
+        # prediction transform
+        # resize the input image to self.img_size * self.img_size
+        self.transform_p = tt.Compose(
+            [
+                tt.Resize((img_size, img_size)),
                 tt.ToTensor(),
             ]
         )
@@ -58,7 +68,12 @@ class ImageClassifierCNN:
         """
 
         # Data transforms (data augmentation)
-
+        # search for test directory in the path if exists then delete it
+        test_dir = os.path.join(path, "test")
+        if os.path.exists(test_dir):
+            print("test directory exists")
+            # delete the test directory
+            shutil.rmtree(test_dir)
         # PyTorch datasets
         dataset = ImageFolder(path, self.transform_t)
         self.train_size = int(train_precentage * len(dataset))
@@ -232,7 +247,7 @@ class ImageClassifierCNN:
         Args:
             path (str): The path to load the model from
         """
-        self.create_model(img_size=img_size)
+        self.create_model()
         print("start loading model")
         self.model.load_state_dict(torch.load(path))
         self.model = to_device(self.model, self.device)

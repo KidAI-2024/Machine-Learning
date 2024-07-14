@@ -89,14 +89,14 @@ class HandPoseUtils:
         """Calculate the area and perimeter of the hand shape using convex hull."""
         if not landmarks or not landmarks[0].landmark:
             print("No landmarks detected or landmarks contain no data.")
-            return None, None
+            return 0.0, 0.0
 
         points = np.array(
             [(lm.x, lm.y) for lm in landmarks[0].landmark], dtype=np.float32
         )
         if len(points) < 3:
             print("Insufficient landmarks to compute convex hull.")
-            return None, None
+            return 0.0, 0.0
 
         try:
             hull = cv2.convexHull(points)
@@ -105,13 +105,13 @@ class HandPoseUtils:
             return area, perimeter
         except Exception as e:
             print("Error while computing convex hull:", e)
-            return None, None
+            return 0.0, 0.0
 
     def calculate_finger_angles(self, landmarks):
         """Calculate the angle between thumb and index finger."""
         # Calculate angles between finger joints.
         if not landmarks:
-            return None
+            return 0.0
 
         # Example: Calculate angle between thumb and index finger.
         thumb_tip = landmarks[0].landmark[self.mp_hands.HandLandmark.THUMB_TIP]
@@ -132,7 +132,7 @@ class HandPoseUtils:
     def calculate_finger_spread(self, landmarks):
         """Calculate distance between thumb tip and index finger tip."""
         if not landmarks:
-            return None
+            return 0.0
 
         # Calculate distance between thumb tip and index finger tip.
         thumb_tip = landmarks[0].landmark[self.mp_hands.HandLandmark.THUMB_TIP]
@@ -146,7 +146,7 @@ class HandPoseUtils:
     def calculate_palm_ratio(self, landmarks):
         """Calculate palm width, height, and ratio."""
         if not landmarks:
-            return None, None, None
+            return 0.0, 0.0, 0.0
 
         # Get palm landmarks (wrist and base of fingers).
         palm_landmarks = [landmarks[0].landmark[i] for i in range(0, 21, 4)]
@@ -171,7 +171,7 @@ class HandPoseUtils:
     def calculate_finger_curvature(self, landmarks):
         """Calculate curvature of each finger."""
         if not landmarks:
-            return None
+            return [0.0] * 5
 
         # Define finger joints for curvature calculation.
         joints = [
@@ -195,7 +195,6 @@ class HandPoseUtils:
                 self.mp_hands.HandLandmark.INDEX_FINGER_MCP,
                 self.mp_hands.HandLandmark.INDEX_FINGER_PIP,
             ],
-            # Add other fingers as needed...
         ]
 
         # Calculate angles for each finger joint.
@@ -221,7 +220,7 @@ class HandPoseUtils:
     def calculate_palm_center(self, landmarks):
         """Calculate the center of the palm."""
         if not landmarks:
-            return None, None
+            return 0.0, 0.0
 
         # Get palm landmarks (wrist and base of fingers).
         palm_landmarks = [landmarks[0].landmark[i] for i in range(0, 21, 4)]
@@ -235,7 +234,7 @@ class HandPoseUtils:
     def calculate_finger_width_ratios(self, landmarks):
         """Calculate width ratios of fingers."""
         if not landmarks:
-            return None
+            return [0.0] * 4
 
         # Get palm landmarks (wrist and base of fingers).
         palm_landmarks = [landmarks[0].landmark[i] for i in range(0, 21, 4)]
@@ -258,7 +257,7 @@ class HandPoseUtils:
 
     def calculate_base_tip_distances(self, landmarks):
         if not landmarks:
-            return None
+            return [0.0] * 5
         finger_tips = [4, 8, 12, 16, 20]
         finger_bases = [2, 5, 9, 13, 17]
 
