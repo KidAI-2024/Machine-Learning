@@ -80,7 +80,9 @@ class HandPoseClassifier:
         features = self.hand_pose_utils.extract_features(
             image, self.selected_features_list
         )
-        # features = features[0]
+        # if features contain only zeros, return -1
+        if np.all(features == 0):
+            return -1
         features = np.array(features).reshape(1, -1)
         prediction = self.model.predict(features)
         # print(f"Predicted class: {prediction[0]}")
