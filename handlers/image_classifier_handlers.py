@@ -126,7 +126,9 @@ def train_image_classifier(req: Req, res: Res) -> int:
     res_msg = {
         "status": "success",
         "saved_model_name": saved_model_name,
-        # "training_accuracy": training_accuracy,
+        "training_accuracy": (
+            training_accuracy if training_accuracy is not None else valid_accuracy
+        ),
         # "training_accuracy": valid_accuracy,
     }
     return res.build(req.event, res_msg)
@@ -183,7 +185,7 @@ def predict_image_classifier(req: Req, res: Res):
             pred = -1
         else:
             print("Predicting...")
-            # print(f"Image shape: {image.shape}")
+            print(f"Image shape: {image.shape}")
             # convert the image to tensor
             img_tensor = torch.tensor(image)
             # print("img shape: ", img_tensor.shape)

@@ -263,17 +263,20 @@ class ImageClassifierClassical:
                 max_iter=1000,
             )
         if self.model_type == 0:
+            print("Creating SVM model...")
             self.clf = svm.SVC(
                 decision_function_shape="ovo",
                 random_state=42,
                 max_iter=1000,
             )
         elif self.model_type == 1:
+            print("Creating Logistic Regression model...")
             self.clf = LogisticRegression(
                 random_state=42,
                 max_iter=1000,
             )
         elif self.model_type == 2:
+            print("Creating Random Forest model...")
             self.clf = RandomForestClassifier(
                 random_state=42,
                 n_jobs=-1,
@@ -385,9 +388,9 @@ class ImageClassifierClassical:
         # img = np.array(img)
         # convert the shape to [32,32,3] instead of [3,32,32]
         # img = np.transpose(img, (1, 2, 0))
-        # print("img shape", img.shape)
+        print("img shape", img.shape)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # print("img shape", img.shape)
+        print("img shape", img.shape)
         gray = np.uint8(
             255
             * (gray - np.min(gray))
@@ -395,15 +398,16 @@ class ImageClassifierClassical:
         )
         # Keypoints, descriptors
         if self.feature_extraction_type == 0:  # sift
+            print("predict sift")
             kp, descriptor = self.sift.detectAndCompute(gray, None)
             # Each keypoint has a descriptor with length 128
             if descriptor is None:
                 return -1
             else:
-                # print("kmeans prediction...")
+                print("kmeans prediction...")
                 vq = [0] * self.n_clusters
                 descriptor = self.k_means.predict(descriptor)
-                # print("len descriptor", len(descriptor))
+                print("len descriptor", len(descriptor))
                 for feature in descriptor:
                     vq[feature] = vq[feature] + 1
                 if self.model is None:
@@ -411,6 +415,7 @@ class ImageClassifierClassical:
                     return -1
                 pred = self.model.predict([vq])[0]
         elif self.feature_extraction_type == 1:  # hog
+            print("predict hog")
             # hog features
             hog_features = hog(
                 gray,
@@ -418,11 +423,13 @@ class ImageClassifierClassical:
                 transform_sqrt=True,
                 feature_vector=True,
             )
+            print("hog_features shape", hog_features.shape)
             if self.model is None:
                 print("Model is None")
                 return -1
             pred = self.model.predict([hog_features])[0]
         else:  # self.feature_extraction_type == 2 => LBP
+            print("predict lbp")
             # Calculate LBP
             lbp_image = local_binary_pattern(
                 gray, self.n_points, self.radius, method="uniform"
@@ -432,6 +439,7 @@ class ImageClassifierClassical:
             hist, _ = np.histogram(
                 lbp_image, bins=n_bins, range=(0, n_bins), density=True
             )
+            print("hist shape", hist.shape)
             if self.model is None:
                 print("Model is None")
                 return -1
