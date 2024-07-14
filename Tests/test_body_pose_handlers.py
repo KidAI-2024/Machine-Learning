@@ -56,7 +56,7 @@ class TestBodyPoseHandlers:
         result = train_body_pose(req, res)
     
         # Assert that the result is as expected
-        assert result == {"event": event, "status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph}
+        assert result == {"event": event, "status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : feature_importance_graph, "training_accuracy" : 0.0}
         print("Start train test passed")
 
 
@@ -161,7 +161,7 @@ class TestBodyPoseHandlers:
         result = train_body_pose(req, res)
     
         # Assert that the result is as expected
-        assert result == {"event": event, "status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : ""}
+        assert result == {"event": event, "status": "success", "saved_model_name": saved_model_name, "feature_importance_graph" : "", "training_accuracy" : 0.0}
         print("Train feature importance graph error test passed")
 
     def test_predict_without_training(self, black_image):

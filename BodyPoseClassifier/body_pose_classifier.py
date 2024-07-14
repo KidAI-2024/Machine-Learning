@@ -21,6 +21,7 @@ class BodyPoseClassifier:
         self.selected_features = []
         self.body_pose_utils = BodyPoseUtils()
         self.camera = CameraFeed()
+        self.training_accuracy = 0.0
 
     def SelectModel(self, model):
         if model == "SVM":
@@ -59,6 +60,7 @@ class BodyPoseClassifier:
 
         # Train the model
         self.model.fit(X_train, y_train)
+        self.training_accuracy = self.model.score(X_train, y_train)
 
     def feature_importance_graph(self):
         """Returns the feature importance graph image based on the model's feature importances or coefficients."""
