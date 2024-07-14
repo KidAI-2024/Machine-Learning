@@ -21,16 +21,18 @@ class ImageClassifierResNet:
         self.model = None
         self.num_classes = num_classes
         self.in_channels = in_channels
-        self.img_size = img_size
+        self.img_size = 32
         # print("Device: ", self.device)
         # print("num_classes: ", num_classes)
         self.camera = CameraFeed()
         self.transform_t = tt.Compose(
             [
-                tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
+                # resize the input image to self.img_size * self.img_size
+                tt.Resize((32, 32)),
+                # tt.RandomCrop(img_size, padding=4, padding_mode="reflect"),
                 tt.RandomHorizontalFlip(),
                 # tt.RandomRotate
-                tt.RandomResizedCrop(img_size, scale=(0.5, 0.9), ratio=(1, 1)),
+                tt.RandomResizedCrop(32, scale=(0.5, 0.9), ratio=(1, 1)),
                 tt.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
                 tt.ToTensor(),
             ]
@@ -52,6 +54,11 @@ class ImageClassifierResNet:
         Args:
             images (ImageFolder): The images to preprocess
         """
+        test_dir = os.path.join(path, "test")
+        if os.path.exists(test_dir):
+            print("test directory exists")
+            # delete the test directory
+            shutil.rmtree(test_dir)
         # Data transforms (data augmentation)
         # PyTorch datasets
         dataset = ImageFolder(path, self.transform_t)
@@ -184,7 +191,7 @@ class ImageClassifierResNet:
             # train_acc = 1 - self.history[-1]["train_loss"]
             # return train_acc, self.history[-1]["val_acc"]
             # TODO:calc the training accuracy
-            return None, self.history[-1]["val_acc"]
+            return (None, self.history[-1]["val_acc"])
 
     def predict(self, img):
         """Predict the class of the image
@@ -214,7 +221,7 @@ class ImageClassifierResNet:
         Args:
             path (str): The path to load the model from
         """
-        self.create_model(img_size=img_size)
+        self.create_model()
         print("start loading model")
         self.model.load_state_dict(torch.load(path))
         self.model = to_device(self.model, self.device)

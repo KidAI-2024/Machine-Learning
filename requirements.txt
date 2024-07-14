@@ -83,6 +83,6 @@ tqdm==4.66.4
 typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
-webrtcvad==2.0.10
+# webrtcvad==2.0.10
 yarl==1.9.4
 zipp==3.19.2
