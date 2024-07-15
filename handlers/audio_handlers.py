@@ -38,12 +38,22 @@ vad = webrtcvad.Vad()
 vad.set_mode(3)  # 0: least aggressive, 3: most aggressive
 
 
-# @event("choose_model")
-# def choose_model(req:Req,res:Res)->int:
-    
 
 @event("start_audio_train")
 def train_audio(req: Req, res: Res) -> int:
+    """
+    Event handler to train the audio classifier.
+    - Loads training data from the specified path.
+    - Sets the specified feature extraction methods, model name, kernel name, KNN neighbors, and number of estimators.
+    - Trains the audio classifier and saves the model.
+
+    Args:
+        req: The request object containing the path and optional parameters.
+        res: The response object to send the status and accuracy of the training process.
+
+    Returns:
+        int: The response status.
+    """
     path = req.msg["path"]
     if req.msg.get("feature_extraction_methods"):
         
@@ -79,12 +89,20 @@ def train_audio(req: Req, res: Res) -> int:
 
 @event("load_audio_model")
 def load_audio_model(req: Req, res: Res) -> int:
-    print("In loading...")
-    # y, sr = librosa.load("accumulated_audio.wav")
-    # dummy_audio = np.zeros(44100, dtype=np.float32)  # 1 second of silence at 44100 Hz
+    """
+    Event handler to load a pre-trained audio classifier model.
+    - Loads a dummy audio file to warm up the resampling process.
+    - Loads the specified model from the provided path.
 
-    # # Perform a dummy resampling to warm up the process
-    # resampy.resample(dummy_audio, 44100, 32000)
+    Args:
+        req: The request object containing the path and saved model name.
+        res: The response object to send the status of the model loading process.
+
+    Returns:
+        int: The response status.
+    """
+    print("In loading...")
+   
     y, sr = librosa.load("accumulated_audio.wav")
     dummy_audio = np.zeros(44100, dtype=np.float32)  # 1 second of silence at 44100 Hz
     
@@ -107,6 +125,17 @@ def load_audio_model(req: Req, res: Res) -> int:
     return res.build(req.event, res_msg)
 
 def start_audio_capture_thread(req: Req, res: Res):
+    """
+    Captures audio from the microphone, detects speech using WebRTC VAD, and makes predictions using the audio classifier.
+    - Streams audio data in chunks.
+    - Accumulates audio data when speech is detected.
+    - Resamples and saves the accumulated audio data.
+    - Predicts the class of the saved audio data and sends the prediction result.
+
+    Args:
+        req: The request object.
+        res: The response object to send prediction results.
+    """
     global stop_prediction, ind
     stream = p.open(format=pyaudio.paInt16,
                     channels=1,
@@ -183,6 +212,14 @@ def start_audio_capture_thread(req: Req, res: Res):
 # Function to handle start prediction event
 @event("predict_audio")
 def predict_audio(req: Req, res: Res):
+    """
+    Event handler to start audio prediction.
+    - Starts the audio capture thread if not already started.
+
+    Args:
+        req: The request object.
+        res: The response object to send the prediction start status.
+    """
     global prediction_started, audio_thread, stop_prediction
 
     # Clear the directory if it exists, otherwise create it
@@ -199,6 +236,14 @@ def predict_audio(req: Req, res: Res):
 # Function to handle stop prediction event
 @event("stop_prediction")
 def stop_audio_capture(req: Req, res: Res):
+    """
+    Event handler to stop audio prediction.
+    - Stops the audio capture thread and resets the prediction flag.
+
+    Args:
+        req: The request object.
+        res: The response object to send the prediction stop status.
+    """
     print("Stop Predictionnnnn")
     global stop_prediction, prediction_started, audio_thread
     stop_prediction = True
