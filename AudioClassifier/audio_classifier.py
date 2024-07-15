@@ -15,6 +15,9 @@ import time
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import  GradientBoostingClassifier
 class AudioClassifier:
+    """
+    A class for audio classification using various feature extraction methods and machine learning models.
+    """
     def __init__(self):
         self.model = SVC(kernel='rbf')
         self.audio_utils = AudioUtils()
@@ -27,6 +30,16 @@ class AudioClassifier:
         self.num_est="100"
 
     def extract_features(self, file_path, audio=False):
+        """
+        Extract audio features from a given file.
+
+        Parameters:
+        - file_path (str or np.ndarray): Path to the audio file or audio data array.
+        - audio (bool): Flag indicating if the audio data is passed directly.
+
+        Returns:
+        - np.ndarray: Extracted features.
+        """
         try:
             if audio:
                 y = file_path  # If audio is passed directly
@@ -84,6 +97,17 @@ class AudioClassifier:
 
 
     def load_dataset(self, directory):
+        """
+        Load the dataset from the specified directory.
+
+        Parameters:
+        - directory (str): Path to the dataset directory.
+
+        Returns:
+        - np.ndarray: Feature matrix.
+        - np.ndarray: Labels.
+        - list: Class labels.
+        """
         features = []
         labels = []
         file_paths = []
@@ -110,6 +134,15 @@ class AudioClassifier:
         return np.array(features), np.array(labels), class_labels
 
     def train(self, dir):
+        """
+        Train the audio classifier with the dataset from the specified directory.
+
+        Parameters:
+        - dir (str): Path to the training directory.
+
+        Returns:
+        - int: Training accuracy in percentage.
+        """
         train_directory = dir  # Replace with the path to your training directory
         print(dir)
         items = os.listdir(train_directory)
@@ -171,6 +204,15 @@ class AudioClassifier:
 
 
     def pred_test(self, directory):
+        """
+        Predict the labels for the dataset in the specified directory and calculate accuracy.
+
+        Parameters:
+        - directory (str): Path to the directory.
+
+        Returns:
+        - float: Accuracy of predictions.
+        """
         items = os.listdir(directory)
         
         # Filter out the items that are directories
@@ -211,6 +253,15 @@ class AudioClassifier:
 
 
     def predict(self, audio):
+        """
+        Predict the class for the given audio.
+
+        Parameters:
+        - audio (str or np.ndarray): Path to the audio file or audio data array.
+
+        Returns:
+        - int: Predicted class index.
+        """
         # print("class map",self.class_name_to_index)
         # t1=time.time()
         wav_audio = self.audio_utils.convert_to_wav(audio)
@@ -240,6 +291,12 @@ class AudioClassifier:
 
         
     def save(self, path):
+        """
+        Save the trained model and scaler to a file.
+
+        Parameters:
+        - path (str): Path to save the model.
+        """
         with open(path, "wb") as model_file:
             pickle.dump({
                 "model": self.model,
@@ -252,6 +309,12 @@ class AudioClassifier:
             }, model_file)
 
     def load(self, path):
+        """
+        Load the model and scaler from a file.
+
+        Parameters:
+        - path (str): Path to the model file.
+        """
         with open(path, "rb") as model_file:
             
             data = pickle.load(model_file)
