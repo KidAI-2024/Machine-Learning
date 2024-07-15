@@ -187,10 +187,6 @@ class ImageClassifierResNet:
                 save_path=f"{project_path}/epoch_lr.png",
                 save_flag=True,
             )
-            # return training and validation accuracies
-            # train_acc = 1 - self.history[-1]["train_loss"]
-            # return train_acc, self.history[-1]["val_acc"]
-            # TODO:calc the training accuracy
             return (None, self.history[-1]["val_acc"])
 
     def predict(self, img):
@@ -203,9 +199,6 @@ class ImageClassifierResNet:
         Returns:
             ste: The class of the image
         """
-        # convert the numpy image to a tensor
-        # img = torch.tensor(img)
-        # print("img shape: ", img.shape)
         # call predict_image function
         return predict_image(img, self.model, self.device)
 
