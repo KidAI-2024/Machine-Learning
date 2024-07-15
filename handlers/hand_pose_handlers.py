@@ -67,9 +67,19 @@ def train_hand_pose(req: Req, res: Res) -> int:
     path = req.msg["path"]
     model = req.msg["model"]
     print(f"Training hand pose model using {model} model")
+    if model == "":
+        res_msg = {"status": "failed", "error": "Select the training model."}
+        return res.build(req.event, res_msg)
     hand_pose_classifier.set_model(model)
     feature_extraction_type = req.msg["feature_extraction_type"]
     print(f"Feature extraction type: {feature_extraction_type}")
+    if req.msg["features"] == "":
+        res_msg = {
+            "status": "failed",
+            "error": "Select some features to train the model.",
+        }
+        return res.build(req.event, res_msg)
+
     selected_features = req.msg["features"].split(",")
     hand_pose_classifier.selected_features_list = selected_features
     hand_pose_classifier.selected_features_list = (
@@ -78,12 +88,6 @@ def train_hand_pose(req: Req, res: Res) -> int:
         )
     )
     print(f"Selected features: {selected_features}")
-    if feature_extraction_type == "mediapipe" and selected_features == [""]:
-        res_msg = {
-            "status": "failed",
-            "error": "Select some features to train the model",
-        }
-        return res.build(req.event, res_msg)
     # training_data is map {"Class Number(first character in the folder name)" : [images]}
     print("Reading data...")
     training_data = utils.read_data(path)
