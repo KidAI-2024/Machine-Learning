@@ -209,10 +209,6 @@ class ResNet9(ImageClassificationBaseResnet):
         # print("res2 out", out.shape)
         out = self.classifier(out)
         # print("classifier out", out.shape)
-        # final_layer_dim = out.shape[1]
-        # print("final_layer_dim", final_layer_dim)
-        # out = nn.Linear(final_layer_dim, self.num_classes)(out)
-        # print("out", out)
         return out
 
 
