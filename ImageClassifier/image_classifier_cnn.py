@@ -172,7 +172,7 @@ class ImageClassifierCNN:
         # inital accuracy without training
         self.history = [] if valid_dl is None else [evaluate(self.model, valid_dl)]
         if decay_lr == True:
-            self.history += fit_without_decay_lr(
+            self.history += fit_one_cycle(
                 epochs,
                 max_lr,
                 self.model,
