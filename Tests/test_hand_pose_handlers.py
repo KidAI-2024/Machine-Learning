@@ -72,7 +72,7 @@ class TestHandPoseHandlers:
         assert result == {
             "event": event,
             "status": "failed",
-            "error": "Select some features to train the model",
+            "error": "Select some features to train the model.",
         }
 
     def test_train_invalid_images(self, mocker):
