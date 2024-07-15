@@ -12,34 +12,7 @@ train_ds = None
 valid_ds = None
 IMG_SIZE = 64
 
-# image_classifier = ImageClassifierCNN(img_size=IMG_SIZE)
-# image_classifier = ImageClassifierResNet(img_size=IMG_SIZE)
-
 image_classifier = ImageClassifier(img_size=IMG_SIZE)
-
-
-@event("start_feed_hand_pose")
-def start_feed_hand_pose(req: Req, res: Res):
-    try:
-        # start camera feed
-        status = image_classifier.start_feed()
-        res_msg = {"message": "success" if status == 0 else "failed"}
-        return res.build(req.event, res_msg)
-    except Exception as e:
-        print(f"Error in start_feed_hand_pose: {e}")
-        return res.build(req.event, {"message": "failed"})
-
-
-@event("stop_feed_hand_pose")
-def stop_feed_hand_pose(req: Req, res: Res):
-    try:
-        # stop camera feed
-        status = image_classifier.stop_feed()
-        res_msg = {"message": "success" if status == 0 else "failed"}
-        return res.build(req.event, res_msg)
-    except Exception as e:
-        print(f"Error in stop_feed_hand_pose: {e}")
-        return res.build(req.event, {"message": "failed"})
 
 
 @event("start_image_classifier_train")

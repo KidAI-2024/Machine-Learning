@@ -194,21 +194,21 @@ class ResNet9(ImageClassificationBaseResnet):
         # print("ResNet9 model created 3")
 
     def forward(self, xb):
-        print("xb", xb.shape)
+        # print("xb", xb.shape)
         out = self.conv1(xb)
-        print("conv1 out", out.shape)
+        # print("conv1 out", out.shape)
         out = self.conv2(out)
-        print("conv2 out", out.shape)
+        # print("conv2 out", out.shape)
         out = self.res1(out) + out
-        print("res1 out", out.shape)
+        # print("res1 out", out.shape)
         out = self.conv3(out)
-        print("conv3 out", out.shape)
+        # print("conv3 out", out.shape)
         out = self.conv4(out)
-        print("conv4 out", out.shape)
+        # print("conv4 out", out.shape)
         out = self.res2(out) + out
-        print("res2 out", out.shape)
+        # print("res2 out", out.shape)
         out = self.classifier(out)
-        print("classifier out", out.shape)
+        # print("classifier out", out.shape)
         # final_layer_dim = out.shape[1]
         # print("final_layer_dim", final_layer_dim)
         # out = nn.Linear(final_layer_dim, self.num_classes)(out)

@@ -216,7 +216,6 @@ class ImageClassifierCNN:
                 )
                 print("learning rates plot saved")
                 # return training and validation accuracies
-                # TODO:calc the training accuracy
             return None, self.history[-1]["val_acc"]
 
     def predict(self, img):
